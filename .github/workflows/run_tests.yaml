@@ -1,0 +1,23 @@
+name: Run unit tests
+run-name: ${{ github.actor }} is running unit tests
+on: [push]
+jobs:
+  Run-Unit-Tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up Go v1.21.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
+          # dependency caching enabled by default
+      - name: display Go version
+        run: go version
+      - name: Install dependencies
+        run: go get . 
+      - name: Check for build issues
+        run: go build ./...
+      - name: run tests
+        run: go test ./...
