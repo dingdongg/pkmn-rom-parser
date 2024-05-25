@@ -80,7 +80,7 @@ func TestGetPokemonBlock(t *testing.T) {
 
 func TestGetPokemon(t *testing.T) {
 	// file takes care of the personality offset
-	savefile, err := os.ReadFile("./mock_pokemon_data")
+	savefile, err := os.ReadFile("./mocks/mock_pokemon_data")
 	if err != nil {
 		t.Fatal("Unexpected error ", err)
 	}
@@ -94,9 +94,9 @@ func TestGetPokemon(t *testing.T) {
 			58,
 			Stats{163, 181, 93, 63, 106, 215},
 		},
-		0,
+		"None",
 		"Jolly",
-		46,
+		"Pressure",
 		Stats{0, 255, 0, 0, 3, 252},
 	}
 
