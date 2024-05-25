@@ -20,7 +20,7 @@ var cache []string
 func GetItemName(index uint16) (string, error) {
 	if len(cache) == 0 {
 		fmt.Println("populating cache")
-		path := filepath.Join(path_resolver.ROOT, "data", "items-gen4.txt")
+		path := filepath.Join(path_resolver.GetRoot(), "data", "items-gen4.txt")
 
 		b, err := os.ReadFile(path)
 		if err != nil {
