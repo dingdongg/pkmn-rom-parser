@@ -3,8 +3,8 @@ package parser
 import (
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/rom_reader"
-	"github.com/dingdongg/pkmn-rom-parser/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v2/rom_reader"
+	"github.com/dingdongg/pkmn-rom-parser/v2/validator"
 )
 
 const PERSONALITY_OFFSET = 0xA0

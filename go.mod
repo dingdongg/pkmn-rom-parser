@@ -1,4 +1,4 @@
-module github.com/dingdongg/pkmn-rom-parser
+module github.com/dingdongg/pkmn-rom-parser/v2
 
 go 1.22.3
 
