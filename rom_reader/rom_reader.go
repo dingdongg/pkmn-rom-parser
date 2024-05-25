@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/char_encoder"
+	"github.com/dingdongg/pkmn-rom-parser/items"
 	"github.com/dingdongg/pkmn-rom-parser/prng"
 )
 
@@ -30,13 +31,13 @@ type BattleStat struct {
 }
 
 type Pokemon struct {
-	PokedexId uint16
-	Name      string
+	PokedexId 	uint16
+	Name      	string
 	BattleStat
-	HeldItemId uint16 // just return the in-memory value for now, figure out the mapping later
-	Nature     string
-	AbilityId  uint
-	EVs        Stats
+	Item		string
+	Nature     	string
+	Ability		string
+	EVs        	Stats
 }
 
 const (
@@ -48,6 +49,175 @@ const (
 
 const BLOCK_SIZE_BYTES uint = 32
 const PARTY_POKEMON_SIZE uint = 236
+
+// only includes abilities for generations 3-5
+var abilityTable [165]string = [165]string{
+	"", // placeholder to account 1-based ability ID indexing
+	"Stench", 
+	"Drizzle", 
+	"Speed Boost", 
+	"Battle Armor", 
+	"Sturdy", 
+	"Damp", 
+	"Limber", 
+	"Sand Veil", 
+	"Static", 
+	"Volt Absorb", 
+	"Water Absorb", 
+	"Oblivious", 
+	"Cloud Nine", 
+	"Compound Eyes", 
+	"Insomnia", 
+	"Color Change", 
+	"Immunity", 
+	"Flash Fire", 
+	"Shield Dust", 
+	"Own Tempo", 
+	"Suction Cups", 
+	"Intimidate", 
+	"Shadow Tag", 
+	"Rough Skin", 
+	"Wonder Guard", 
+	"Levitate", 
+	"Effect Spore", 
+	"Synchronize", 
+	"Clear Body", 
+	"Natural Cure", 
+	"Lightning Rod", 
+	"Serene Grace", 
+	"Swift Swim", 
+	"Chlorophyll", 
+	"Illuminate", 
+	"Trace", 
+	"Huge Power", 
+	"Poison Point", 
+	"Inner Focus", 
+	"Magma Armor", 
+	"Water Veil", 
+	"Magnet Pull", 
+	"Soundproof", 
+	"Rain Dish", 
+	"Sand Stream", 
+	"Pressure", 
+	"Thick Fat", 
+	"Early Bird", 
+	"Flame Body", 
+	"Run Away", 
+	"Keen Eye", 
+	"Hyper Cutter", 
+	"Pickup", 
+	"Truant", 
+	"Hustle", 
+	"Cute Charm", 
+	"Plus", 
+	"Minus", 
+	"Forecast", 
+	"Sticky Hold", 
+	"Shed Skin", 
+	"Guts", 
+	"Marvel Scale", 
+	"Liquid Ooze", 
+	"Overgrow", 
+	"Blaze", 
+	"Torrent", 
+	"Swarm", 
+	"Rock Head", 
+	"Drought", 
+	"Arena Trap", 
+	"Vital Spirit", 
+	"White Smoke", 
+	"Pure Power", 
+	"Shell Armor", 
+	"Air Lock", 
+	"Tangled Feet", 
+	"Motor Drive", 
+	"Rivalry", 
+	"Steadfast", 
+	"Snow Cloak", 
+	"Gluttony", 
+	"Anger Point", 
+	"Unburden", 
+	"Heatproof", 
+	"Simple", 
+	"Dry Skin", 
+	"Download", 
+	"Iron Fist", 
+	"Poison Heal", 
+	"Adaptability", 
+	"Skill Link", 
+	"Hydration", 
+	"Solar Power", 
+	"Quick Feet", 
+	"Normalize", 
+	"Sniper", 
+	"Magic Guard", 
+	"No Guard", 
+	"Stall", 
+	"Technician", 
+	"Leaf Guard", 
+	"Klutz", 
+	"Mold Breaker", 
+	"Super Luck", 
+	"Aftermath", 
+	"Anticipation", 
+	"Forewarn", 
+	"Unaware", 
+	"Tinted Lens", 
+	"Filter", 
+	"Slow Start", 
+	"Scrappy", 
+	"Storm Drain", 
+	"Ice Body", 
+	"Solid Rock", 
+	"Snow Warning", 
+	"Honey Gather", 
+	"Frisk", 
+	"Reckless", 
+	"Multitype", 
+	"Flower Gift", 
+	"Bad Dreams", 
+	"Pickpocket", 
+	"Sheer Force", 
+	"Contrary", 
+	"Unnerve", 
+	"Defiant", 
+	"Defeatist", 
+	"Cursed Body", 
+	"Healer", 
+	"Friend Guard", 
+	"Weak Armor", 
+	"Heavy Metal", 
+	"Light Metal", 
+	"Multiscale", 
+	"Toxic Boost", 
+	"Flare Boost", 
+	"Harvest", 
+	"Telepathy", 
+	"Moody", 
+	"Overcoat", 
+	"Poison Touch", 
+	"Regenerator", 
+	"Big Pecks", 
+	"Sand Rush", 
+	"Wonder Skin", 
+	"Analytic", 
+	"Illusion", 
+	"Imposter", 
+	"Infiltrator", 
+	"Mummy", 
+	"Moxie", 
+	"Justified", 
+	"Rattled", 
+	"Magic Bounce", 
+	"Sap Sipper", 
+	"Prankster", 
+	"Sand Force", 
+	"Iron Barbs", 
+	"Zen Mode", 
+	"Victory Star", 
+	"Turboblaze", 
+	"Teravolt", 
+}
 
 var natureTable [25]string = [25]string{
 	"Hardy",
@@ -192,9 +362,12 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 	}
 
 	dexId := binary.LittleEndian.Uint16(blockA[:2])
-	heldItem := binary.LittleEndian.Uint16(blockA[2:4])
+	heldItem, err := items.GetItemName(binary.LittleEndian.Uint16(blockA[2:4]))
+	if err != nil {
+		log.Fatal(err)
+	}
 	nature := natureTable[prng.Personality%25]
-	ability := binary.LittleEndian.Uint16(blockA[0xD:0xF])
+	ability := abilityTable[binary.LittleEndian.Uint16(blockA[0xD:0xF])]
 
 	pokemonNameLength := 22
 	name := ""
@@ -239,7 +412,7 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 		battleStats,
 		heldItem,
 		nature,
-		uint(ability),
+		ability,
 		Stats{
 			uint(blockA[hpEVOffset]),
 			uint(blockA[attackEVOffset]),

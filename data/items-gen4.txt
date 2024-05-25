@@ -1,0 +1,538 @@
+0x0000|None|BOTH
+0x0001|Master Ball|BOTH
+0x0002|Ultra Ball|BOTH
+0x0003|Great Ball|BOTH
+0x0004|Poké Ball|BOTH
+0x0005|Safari Ball|BOTH
+0x0006|Net Ball|BOTH
+0x0007|Dive Ball|BOTH
+0x0008|Nest Ball|BOTH
+0x0009|Repeat Ball|BOTH
+0x000A|Timer Ball|BOTH
+0x000B|Luxury Ball|BOTH
+0x000C|Premier Ball|BOTH
+0x000D|Dusk Ball|BOTH
+0x000E|Heal Ball|BOTH
+0x000F|Quick Ball|BOTH
+0x0010|Cherish Ball|BOTH
+0x0011|Potion|BOTH
+0x0012|Antidote|BOTH
+0x0013|Burn Heal|BOTH
+0x0014|Ice Heal|BOTH
+0x0015|Awakening|BOTH
+0x0016|Parlyz Heal|BOTH
+0x0017|Full Restore|BOTH
+0x0018|Max Potion|BOTH
+0x0019|Hyper Potion|BOTH
+0x001A|Super Potion|BOTH
+0x001B|Full Heal|BOTH
+0x001C|Revive|BOTH
+0x001D|Max Revive|BOTH
+0x001E|Fresh Water|BOTH
+0x001F|Soda Pop|BOTH
+0x0020|Lemonade|BOTH
+0x0021|Moomoo Milk|BOTH
+0x0022|EnergyPowder|BOTH
+0x0023|Energy Root|BOTH
+0x0024|Heal Powder|BOTH
+0x0025|Revival Herb|BOTH
+0x0026|Ether|BOTH
+0x0027|Max Ether|BOTH
+0x0028|Elixir|BOTH
+0x0029|Max Elixir|BOTH
+0x002A|Lava Cookie|BOTH
+0x002B|Berry Juice|BOTH
+0x002C|Sacred Ash|BOTH
+0x002D|HP Up|BOTH
+0x002E|Protein|BOTH
+0x002F|Iron|BOTH
+0x0030|Carbos|BOTH
+0x0031|Calcium|BOTH
+0x0032|Rare Candy|BOTH
+0x0033|PP Up|BOTH
+0x0034|Zinc|BOTH
+0x0035|PP Max|BOTH
+0x0036|Old Gateau|BOTH
+0x0037|Guard Spec.|BOTH
+0x0038|Dire Hit|BOTH
+0x0039|X Attack|BOTH
+0x003A|X Defense|BOTH
+0x003B|X Speed|BOTH
+0x003C|X Accuracy|BOTH
+0x003D|X Special|BOTH
+0x003E|X Sp. Def|BOTH
+0x003F|Poké Doll|BOTH
+0x0040|Fluffy Tail|BOTH
+0x0041|Blue Flute|BOTH
+0x0042|Yellow Flute|BOTH
+0x0043|Red Flute|BOTH
+0x0044|Black Flute|BOTH
+0x0045|White Flute|BOTH
+0x0046|Shoal Salt|BOTH
+0x0047|Shoal Shell|BOTH
+0x0048|Red Shard|BOTH
+0x0049|Blue Shard|BOTH
+0x004A|Yellow Shard|BOTH
+0x004B|Green Shard|BOTH
+0x004C|Super Repel|BOTH
+0x004D|Max Repel|BOTH
+0x004E|Escape Rope|BOTH
+0x004F|Repel|BOTH
+0x0050|Sun Stone|BOTH
+0x0051|Moon Stone|BOTH
+0x0052|Fire Stone|BOTH
+0x0053|Thunderstone|BOTH
+0x0054|Water Stone|BOTH
+0x0055|Leaf Stone|BOTH
+0x0056|TinyMushroom|BOTH
+0x0057|Big Mushroom|BOTH
+0x0058|Pearl|BOTH
+0x0059|Big Pearl|BOTH
+0x005A|Stardust|BOTH
+0x005B|Star Piece|BOTH
+0x005C|Nugget|BOTH
+0x005D|Heart Scale|BOTH
+0x005E|Honey|BOTH
+0x005F|Growth Mulch|BOTH
+0x0060|Damp Mulch|BOTH
+0x0061|Stable Mulch|BOTH
+0x0062|Gooey Mulch|BOTH
+0x0063|Root Fossil|BOTH
+0x0064|Claw Fossil|BOTH
+0x0065|Helix Fossil|BOTH
+0x0066|Dome Fossil|BOTH
+0x0067|Old Amber|BOTH
+0x0068|Armor Fossil|BOTH
+0x0069|Skull Fossil|BOTH
+0x006A|Rare Bone|BOTH
+0x006B|Shiny Stone|BOTH
+0x006C|Dusk Stone|BOTH
+0x006D|Dawn Stone|BOTH
+0x006E|Oval Stone|BOTH
+0x006F|Odd Keystone|BOTH
+0x0070|Griseous Orb|BOTH
+0x0071|unknown|BOTH
+0x0072|unknown|BOTH
+0x0073|unknown|BOTH
+0x0074|unknown|BOTH
+0x0075|unknown|BOTH
+0x0076|unknown|BOTH
+0x0077|unknown|BOTH
+0x0078|unknown|BOTH
+0x0079|unknown|BOTH
+0x007A|unknown|BOTH
+0x007B|unknown|BOTH
+0x007C|unknown|BOTH
+0x007D|unknown|BOTH
+0x007E|unknown|BOTH
+0x007F|unknown|BOTH
+0x0080|unknown|BOTH
+0x0081|unknown|BOTH
+0x0082|unknown|BOTH
+0x0083|unknown|BOTH
+0x0084|unknown|BOTH
+0x0085|unknown|BOTH
+0x0086|unknown|BOTH
+0x0087|Adamant Orb|BOTH
+0x0088|Lustrous Orb|BOTH
+0x0089|Grass Mail|BOTH
+0x008A|Flame Mail|BOTH
+0x008B|Bubble Mail|BOTH
+0x008C|Bloom Mail|BOTH
+0x008D|Tunnel Mail|BOTH
+0x008E|Steel Mail|BOTH
+0x008F|Heart Mail|BOTH
+0x0090|Snow Mail|BOTH
+0x0091|Space Mail|BOTH
+0x0092|Air Mail|BOTH
+0x0093|Mosaic Mail|BOTH
+0x0094|Brick Mail|BOTH
+0x0095|Cheri Berry|BOTH
+0x0096|Chesto Berry|BOTH
+0x0097|Pecha Berry|BOTH
+0x0098|Rawst Berry|BOTH
+0x0099|Aspear Berry|BOTH
+0x009A|Leppa Berry|BOTH
+0x009B|Oran Berry|BOTH
+0x009C|Persim Berry|BOTH
+0x009D|Lum Berry|BOTH
+0x009E|Sitrus Berry|BOTH
+0x009F|Figy Berry|BOTH
+0x00A0|Wiki Berry|BOTH
+0x00A1|Mago Berry|BOTH
+0x00A2|Aguav Berry|BOTH
+0x00A3|Iapapa Berry|BOTH
+0x00A4|Razz Berry|BOTH
+0x00A5|Bluk Berry|BOTH
+0x00A6|Nanab Berry|BOTH
+0x00A7|Wepear Berry|BOTH
+0x00A8|Pinap Berry|BOTH
+0x00A9|Pomeg Berry|BOTH
+0x00AA|Kelpsy Berry|BOTH
+0x00AB|Qualot Berry|BOTH
+0x00AC|Hondew Berry|BOTH
+0x00AD|Grepa Berry|BOTH
+0x00AE|Tamato Berry|BOTH
+0x00AF|Cornn Berry|BOTH
+0x00B0|Magost Berry|BOTH
+0x00B1|Rabuta Berry|BOTH
+0x00B2|Nomel Berry|BOTH
+0x00B3|Spelon Berry|BOTH
+0x00B4|Pamtre Berry|BOTH
+0x00B5|Watmel Berry|BOTH
+0x00B6|Durin Berry|BOTH
+0x00B7|Belue Berry|BOTH
+0x00B8|Occa Berry|BOTH
+0x00B9|Passho Berry|BOTH
+0x00BA|Wacan Berry|BOTH
+0x00BB|Rindo Berry|BOTH
+0x00BC|Yache Berry|BOTH
+0x00BD|Chople Berry|BOTH
+0x00BE|Kebia Berry|BOTH
+0x00BF|Shuca Berry|BOTH
+0x00C0|Coba Berry|BOTH
+0x00C1|Payapa Berry|BOTH
+0x00C2|Tanga Berry|BOTH
+0x00C3|Charti Berry|BOTH
+0x00C4|Kasib Berry|BOTH
+0x00C5|Haban Berry|BOTH
+0x00C6|Colbur Berry|BOTH
+0x00C7|Babiri Berry|BOTH
+0x00C8|Chilan Berry|BOTH
+0x00C9|Liechi Berry|BOTH
+0x00CA|Ganlon Berry|BOTH
+0x00CB|Salac Berry|BOTH
+0x00CC|Petaya Berry|BOTH
+0x00CD|Apicot Berry|BOTH
+0x00CE|Lansat Berry|BOTH
+0x00CF|Starf Berry|BOTH
+0x00D0|Enigma Berry|BOTH
+0x00D1|Micle Berry|BOTH
+0x00D2|Custap Berry|BOTH
+0x00D3|Jaboca Berry|BOTH
+0x00D4|Rowap Berry|BOTH
+0x00D5|BrightPowder|BOTH
+0x00D6|White Herb|BOTH
+0x00D7|Macho Brace|BOTH
+0x00D8|Exp. Share|BOTH
+0x00D9|Quick Claw|BOTH
+0x00DA|Soothe Bell|BOTH
+0x00DB|Mental Herb|BOTH
+0x00DC|Choice Band|BOTH
+0x00DD|King's Rock|BOTH
+0x00DE|SilverPowder|BOTH
+0x00DF|Amulet Coin|BOTH
+0x00E0|Cleanse Tag|BOTH
+0x00E1|Soul Dew|BOTH
+0x00E2|DeepSeaTooth|BOTH
+0x00E3|DeepSeaScale|BOTH
+0x00E4|Smoke Ball|BOTH
+0x00E5|Everstone|BOTH
+0x00E6|Focus Band|BOTH
+0x00E7|Lucky Egg|BOTH
+0x00E8|Scope Lens|BOTH
+0x00E9|Metal Coat|BOTH
+0x00EA|Leftovers|BOTH
+0x00EB|Dragon Scale|BOTH
+0x00EC|Light Ball|BOTH
+0x00ED|Soft Sand|BOTH
+0x00EE|Hard Stone|BOTH
+0x00EF|Miracle Seed|BOTH
+0x00F0|BlackGlasses|BOTH
+0x00F1|Black Belt|BOTH
+0x00F2|Magnet|BOTH
+0x00F3|Mystic Water|BOTH
+0x00F4|Sharp Beak|BOTH
+0x00F5|Poison Barb|BOTH
+0x00F6|NeverMeltIce|BOTH
+0x00F7|Spell Tag|BOTH
+0x00F8|TwistedSpoon|BOTH
+0x00F9|Charcoal|BOTH
+0x00FA|Dragon Fang|BOTH
+0x00FB|Silk Scarf|BOTH
+0x00FC|Up-Grade|BOTH
+0x00FD|Shell Bell|BOTH
+0x00FE|Sea Incense|BOTH
+0x00FF|Lax Incense|BOTH
+0x0100|Lucky Punch|BOTH
+0x0101|Metal Powder|BOTH
+0x0102|Thick Club|BOTH
+0x0103|Stick|BOTH
+0x0104|Red Scarf|BOTH
+0x0105|Blue Scarf|BOTH
+0x0106|Pink Scarf|BOTH
+0x0107|Green Scarf|BOTH
+0x0108|Yellow Scarf|BOTH
+0x0109|Wide Lens|BOTH
+0x010A|Muscle Band|BOTH
+0x010B|Wise Glasses|BOTH
+0x010C|Expert Belt|BOTH
+0x010D|Light Clay|BOTH
+0x010E|Life Orb|BOTH
+0x010F|Power Herb|BOTH
+0x0110|Toxic Orb|BOTH
+0x0111|Flame Orb|BOTH
+0x0112|Quick Powder|BOTH
+0x0113|Focus Sash|BOTH
+0x0114|Zoom Lens|BOTH
+0x0115|Metronome|BOTH
+0x0116|Iron Ball|BOTH
+0x0117|Lagging Tail|BOTH
+0x0118|Destiny Knot|BOTH
+0x0119|Black Sludge|BOTH
+0x011A|Icy Rock|BOTH
+0x011B|Smooth Rock|BOTH
+0x011C|Heat Rock|BOTH
+0x011D|Damp Rock|BOTH
+0x011E|Grip Claw|BOTH
+0x011F|Choice Scarf|BOTH
+0x0120|Sticky Barb|BOTH
+0x0121|Power Bracer|BOTH
+0x0122|Power Belt|BOTH
+0x0123|Power Lens|BOTH
+0x0124|Power Band|BOTH
+0x0125|Power Anklet|BOTH
+0x0126|Power Weight|BOTH
+0x0127|Shed Shell|BOTH
+0x0128|Big Root|BOTH
+0x0129|Choice Specs|BOTH
+0x012A|Flame Plate|BOTH
+0x012B|Splash Plate|BOTH
+0x012C|Zap Plate|BOTH
+0x012D|Meadow Plate|BOTH
+0x012E|Icicle Plate|BOTH
+0x012F|Fist Plate|BOTH
+0x0130|Toxic Plate|BOTH
+0x0131|Earth Plate|BOTH
+0x0132|Sky Plate|BOTH
+0x0133|Mind Plate|BOTH
+0x0134|Insect Plate|BOTH
+0x0135|Stone Plate|BOTH
+0x0136|Spooky Plate|BOTH
+0x0137|Draco Plate|BOTH
+0x0138|Dread Plate|BOTH
+0x0139|Iron Plate|BOTH
+0x013A|Odd Incense|BOTH
+0x013B|Rock Incense|BOTH
+0x013C|Full Incense|BOTH
+0x013D|Wave Incense|BOTH
+0x013E|Rose Incense|BOTH
+0x013F|Luck Incense|BOTH
+0x0140|Pure Incense|BOTH
+0x0141|Protector|BOTH
+0x0142|Electirizer|BOTH
+0x0143|Magmarizer|BOTH
+0x0144|Dubious Disc|BOTH
+0x0145|Reaper Cloth|BOTH
+0x0146|Razor Claw|BOTH
+0x0147|Razor Fang|BOTH
+0x0148|TM01|BOTH
+0x0149|TM02|BOTH
+0x014A|TM03|BOTH
+0x014B|TM04|BOTH
+0x014C|TM05|BOTH
+0x014D|TM06|BOTH
+0x014E|TM07|BOTH
+0x014F|TM08|BOTH
+0x0150|TM09|BOTH
+0x0151|TM10|BOTH
+0x0152|TM11|BOTH
+0x0153|TM12|BOTH
+0x0154|TM13|BOTH
+0x0155|TM14|BOTH
+0x0156|TM15|BOTH
+0x0157|TM16|BOTH
+0x0158|TM17|BOTH
+0x0159|TM18|BOTH
+0x015A|TM19|BOTH
+0x015B|TM20|BOTH
+0x015C|TM21|BOTH
+0x015D|TM22|BOTH
+0x015E|TM23|BOTH
+0x015F|TM24|BOTH
+0x0160|TM25|BOTH
+0x0161|TM26|BOTH
+0x0162|TM27|BOTH
+0x0163|TM28|BOTH
+0x0164|TM29|BOTH
+0x0165|TM30|BOTH
+0x0166|TM31|BOTH
+0x0167|TM32|BOTH
+0x0168|TM33|BOTH
+0x0169|TM34|BOTH
+0x016A|TM35|BOTH
+0x016B|TM36|BOTH
+0x016C|TM37|BOTH
+0x016D|TM38|BOTH
+0x016E|TM39|BOTH
+0x016F|TM40|BOTH
+0x0170|TM41|BOTH
+0x0171|TM42|BOTH
+0x0172|TM43|BOTH
+0x0173|TM44|BOTH
+0x0174|TM45|BOTH
+0x0175|TM46|BOTH
+0x0176|TM47|BOTH
+0x0177|TM48|BOTH
+0x0178|TM49|BOTH
+0x0179|TM50|BOTH
+0x017A|TM51|BOTH
+0x017B|TM52|BOTH
+0x017C|TM53|BOTH
+0x017D|TM54|BOTH
+0x017E|TM55|BOTH
+0x017F|TM56|BOTH
+0x0180|TM57|BOTH
+0x0181|TM58|BOTH
+0x0182|TM59|BOTH
+0x0183|TM60|BOTH
+0x0184|TM61|BOTH
+0x0185|TM62|BOTH
+0x0186|TM63|BOTH
+0x0187|TM64|BOTH
+0x0188|TM65|BOTH
+0x0189|TM66|BOTH
+0x018A|TM67|BOTH
+0x018B|TM68|BOTH
+0x018C|TM69|BOTH
+0x018D|TM70|BOTH
+0x018E|TM71|BOTH
+0x018F|TM72|BOTH
+0x0190|TM73|BOTH
+0x0191|TM74|BOTH
+0x0192|TM75|BOTH
+0x0193|TM76|BOTH
+0x0194|TM77|BOTH
+0x0195|TM78|BOTH
+0x0196|TM79|BOTH
+0x0197|TM80|BOTH
+0x0198|TM81|BOTH
+0x0199|TM82|BOTH
+0x019A|TM83|BOTH
+0x019B|TM84|BOTH
+0x019C|TM85|BOTH
+0x019D|TM86|BOTH
+0x019E|TM87|BOTH
+0x019F|TM88|BOTH
+0x01A0|TM89|BOTH
+0x01A1|TM90|BOTH
+0x01A2|TM91|BOTH
+0x01A3|TM92|BOTH
+0x01A4|HM01|BOTH
+0x01A5|HM02|BOTH
+0x01A6|HM03|BOTH
+0x01A7|HM04|BOTH
+0x01A8|HM05|BOTH
+0x01A9|HM06|BOTH
+0x01AA|HM07|BOTH
+0x01AB|HM08|BOTH
+0x01AC|Explorer Kit|PT
+0x01AC|???|HGSS
+0x01AD|Loot Sack|BOTH
+0x01AE|Rule Book|BOTH
+0x01AF|Poké Radar|BOTH
+0x01B0|Point Card|BOTH
+0x01B1|Journal|BOTH
+0x01B2|Seal Case|BOTH
+0x01B3|Fashion Case|BOTH
+0x01B4|Seal Bag|BOTH
+0x01B5|Pal Pad|BOTH
+0x01B6|Works Key|BOTH
+0x01B7|Old Charm|BOTH
+0x01B8|Galactic Key|BOTH
+0x01B9|Red Chain|BOTH
+0x01BA|Town Map|BOTH
+0x01BB|Vs. Seeker|BOTH
+0x01BC|Coin Case|BOTH
+0x01BD|Old Rod|BOTH
+0x01BE|Good Rod|BOTH
+0x01BF|Super Rod|BOTH
+0x01C0|Sprayduck|BOTH
+0x01C1|Poffin Case|BOTH
+0x01C2|Bicycle|BOTH
+0x01C3|Suite Key|BOTH
+0x01C4|Oak's Letter|BOTH
+0x01C5|Lunar Wing|BOTH
+0x01C6|Member Card|BOTH
+0x01C7|Azure Flute|BOTH
+0x01C8|S.S. Ticket|BOTH
+0x01C9|Contest Pass|BOTH
+0x01CA|Magma Stone|BOTH
+0x01CB|Parcel|BOTH
+0x01CC|Coupon 1|BOTH
+0x01CD|Coupon 2|BOTH
+0x01CE|Coupon 3|BOTH
+0x01CF|Storage Key|BOTH
+0x01D0|SecretPotion|BOTH
+0x01D1|Vs. Recorder|BOTH
+0x01D2|Gracidea|BOTH
+0x01D3|Secret Key|BOTH
+0x01D4|Apricorn Box|HGSS
+0x01D5|Unown Report|HGSS
+0x01D6|Berry Pots|HGSS
+0x01D7|Dowsing MCHN|HGSS
+0x01D8|Blue Card|HGSS
+0x01D9|SlowpokeTail|HGSS
+0x01DA|Clear Bell|HGSS
+0x01DB|Card Key|HGSS
+0x01DC|Basement Key|HGSS
+0x01DD|SquirtBottle|HGSS
+0x01DE|Red Scale|HGSS
+0x01DF|Lost Item|HGSS
+0x01E0|Pass|HGSS
+0x01E1|Machine Part|HGSS
+0x01E2|Silver Wing|HGSS
+0x01E3|Rainbow Wing|HGSS
+0x01E4|Mystery Egg|HGSS
+0x01E5|Red Apricorn|HGSS
+0x01E6|Ylw Apricorn|HGSS
+0x01E7|Blu Apricorn|HGSS
+0x01E8|Grn Apricorn|HGSS
+0x01E9|Pnk Apricorn|HGSS
+0x01EA|Wht Apricorn|HGSS
+0x01EB|Blk Apricorn|HGSS
+0x01EC|Fast Ball|HGSS
+0x01ED|Level Ball|HGSS
+0x01EE|Lure Ball|HGSS
+0x01EF|Heavy Ball|HGSS
+0x01F0|Love Ball|HGSS
+0x01F1|Friend Ball|HGSS
+0x01F2|Moon Ball|HGSS
+0x01F3|Sport Ball|HGSS
+0x01F4|Park Ball|HGSS
+0x01F5|Photo Album|HGSS
+0x01F6|GB Sounds|HGSS
+0x01F7|Tidal Bell|HGSS
+0x01F8|RageCandyBar|HGSS
+0x01F9|Data Card 01|HGSS
+0x01FA|Data Card 02|HGSS
+0x01FB|Data Card 03|HGSS
+0x01FC|Data Card 04|HGSS
+0x01FD|Data Card 05|HGSS
+0x01FE|Data Card 06|HGSS
+0x01FF|Data Card 07|HGSS
+0x0200|Data Card 08|HGSS
+0x0201|Data Card 09|HGSS
+0x0202|Data Card 10|HGSS
+0x0203|Data Card 11|HGSS
+0x0204|Data Card 12|HGSS
+0x0205|Data Card 13|HGSS
+0x0206|Data Card 14|HGSS
+0x0207|Data Card 15|HGSS
+0x0208|Data Card 16|HGSS
+0x0209|Data Card 17|HGSS
+0x020A|Data Card 18|HGSS
+0x020B|Data Card 19|HGSS
+0x020C|Data Card 20|HGSS
+0x020D|Data Card 21|HGSS
+0x020E|Data Card 22|HGSS
+0x020F|Data Card 23|HGSS
+0x0210|Data Card 24|HGSS
+0x0211|Data Card 25|HGSS
+0x0212|Data Card 26|HGSS
+0x0213|Data Card 27|HGSS
+0x0214|Jade Orb|HGSS
+0x0215|Lock Capsule|HGSS
+0x0216|Red Orb|HGSS
+0x0217|Blue Orb|HGSS
+0x0218|Enigma Stone|HGSS
