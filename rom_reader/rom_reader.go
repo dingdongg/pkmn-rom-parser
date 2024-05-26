@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v2/char_encoder"
-	"github.com/dingdongg/pkmn-rom-parser/v2/items"
+	"github.com/dingdongg/pkmn-rom-parser/v2/data"
 	"github.com/dingdongg/pkmn-rom-parser/v2/prng"
 )
 
@@ -362,7 +362,7 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 	}
 
 	dexId := binary.LittleEndian.Uint16(blockA[:2])
-	heldItem, err := items.GetItemName(binary.LittleEndian.Uint16(blockA[2:4]))
+	heldItem, err := data.GetItem(binary.LittleEndian.Uint16(blockA[2:4]))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -410,7 +410,7 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 		dexId,
 		name,
 		battleStats,
-		heldItem,
+		heldItem.Name,
 		nature,
 		ability,
 		Stats{

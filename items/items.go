@@ -24,7 +24,7 @@ func GetItemName(index uint16) (string, error) {
 
 		b, err := os.ReadFile(path)
 		if err != nil {
-			log.Fatal("Unexpected error while reading items file ", err)
+			log.Fatal("Unexpected error while reading items file: ", err)
 		}
 
 		scanner := bufio.NewScanner(bytes.NewReader(b))
