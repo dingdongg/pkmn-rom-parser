@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v2/char_encoder"
-	"github.com/dingdongg/pkmn-rom-parser/v2/data"
-	"github.com/dingdongg/pkmn-rom-parser/v2/prng"
+	"github.com/dingdongg/pkmn-rom-parser/v3/char_encoder"
+	"github.com/dingdongg/pkmn-rom-parser/v3/data"
+	"github.com/dingdongg/pkmn-rom-parser/v3/prng"
 )
 
 type blockOrder struct {
