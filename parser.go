@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/dingdongg/pkmn-rom-parser/v2/rom_reader"
 	"github.com/dingdongg/pkmn-rom-parser/v2/validator"
@@ -9,19 +9,18 @@ import (
 
 const PERSONALITY_OFFSET = 0xA0
 
-func Parse(savefile []byte) []rom_reader.Pokemon {
+func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 	valid := validator.Validate(savefile)
+	var res []rom_reader.Pokemon
 
-	if valid {
-		fmt.Println("SAVEFILE IS VALID")
+	if !valid {
+		return res, errors.New("invalid file")
 	}
 
 	// TODO: only read from/edit the most recent savefiel
-	var res []rom_reader.Pokemon
-
 	for i := uint(0); i < 6; i++ {
 		res = append(res, rom_reader.GetPokemon(savefile[PERSONALITY_OFFSET:], i))
 	}
 
-	return res
+	return res, nil
 }
