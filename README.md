@@ -1,5 +1,8 @@
 # Pokemon Platinum ROM Parser
-Application used to parse in-game information in the Pokemon Platinum ROM for the NDS.
+Application used to parse in-game information in generation IV/V Pokemon games.
+
+## Currently supported games
+- Pokemon Platinum only
 
 ## TODO
 - extend support for other gen. 4/5 games
