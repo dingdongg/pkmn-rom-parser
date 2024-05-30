@@ -38,6 +38,7 @@ type Pokemon struct {
 	Nature  string
 	Ability string
 	EVs     Stats
+	IVs		Stats
 }
 
 const (
@@ -356,6 +357,25 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 		log.Fatal("Unexpected error while parsing block A: ", err)
 	}
 
+	blockB, err := getPokemonBlock(plaintext_buf, B, prng.Personality)
+	if err != nil {
+		log.Fatal("Unexpected error while parsing block B: ", err)
+	}
+
+	ivBytes := binary.LittleEndian.Uint32(blockB[0x10 : 0x14])
+
+	ivs := Stats {
+		uint((ivBytes >> 0) & 0b11111),
+		uint((ivBytes >> 5) & 0b11111),
+		uint((ivBytes >> 10) & 0b11111),
+		uint((ivBytes >> 20) & 0b11111),
+		uint((ivBytes >> 25) & 0b11111),
+		uint((ivBytes >> 15) & 0b11111),
+	}
+
+	// ivBlock := binary.LittleEndian.Uint32(blockB[0x10:0x14])
+	fmt.Printf("% x\n", blockB[0x10:0x14])
+
 	blockC, err := getPokemonBlock(plaintext_buf, C, prng.Personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block C: ", err)
@@ -421,5 +441,6 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 			uint(blockA[specialDefEVOffset]),
 			uint(blockA[speedEVOffset]),
 		},
+		ivs,
 	}
 }

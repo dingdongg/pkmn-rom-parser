@@ -98,6 +98,7 @@ func TestGetPokemon(t *testing.T) {
 		"Jolly",
 		"Pressure",
 		Stats{0, 255, 0, 0, 3, 252},
+		Stats{25, 1, 23, 25, 5, 17},
 	}
 
 	if !cmp.Equal(firstPokemon, expectedPokemon) {
