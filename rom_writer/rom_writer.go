@@ -185,99 +185,101 @@ type StagingBuffer struct {
 
 type StagingMap map[uint]StagingBuffer
 
-func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteRequests) ([]byte, error) {
+func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []WriteRequests) ([]byte, error) {
 	updatedPokemonIndexes := make(map[uint]bool, 0)
 	base := chunk.SmallBlock.Address + consts.PERSONALITY_OFFSET
 	changes := make(StagingMap)
 
-	for req, data := range newData.Contents {
-		bytes, err := data.Bytes()
-		if err != nil {
-			return []byte{}, err
-		}
-		fmt.Printf("%s: % x\n", req, bytes)
-
-		offset := base + newData.PartyIndex*consts.PARTY_POKEMON_SIZE
-		personality := binary.LittleEndian.Uint32(savefile[offset : offset+4])
-
-		// fmt.Printf("% x\n", savefile[offset:offset+36])
-
-		var dataOffset int
-		var blockIndex int
-
-		if req == ITEM {
-			dataOffset = consts.BLOCK_A_ITEM
-			blockIndex = shuffler.A
-		} else if req == ABILITY {
-			dataOffset = consts.BLOCK_A_ABILITY
-			blockIndex = shuffler.A
-		} else if req == EV {
-			dataOffset = consts.BLOCK_A_EV
-			blockIndex = shuffler.A
-		} else if req == IV {
-			dataOffset = consts.BLOCK_B_IV
-			blockIndex = shuffler.B
-		} else if req == NICKNAME {
-			dataOffset = consts.BLOCK_C_NICKNAME
-			blockIndex = shuffler.C
-		} else if req == LEVEL {
-			dataOffset = consts.BATTLE_STATS_LEVEL
-			blockIndex = -1
-		} else if req == BATTLE_STATS {
-			dataOffset = consts.BATTLE_STATS_STAT
-			blockIndex = -1
-		}
-
-		var addr AbsAddress
-
-		if blockIndex != -1 {
-			blockAddress, err := shuffler.GetPokemonBlockLocation(uint(blockIndex), personality)
+	for _, wr := range newData {
+		for req, data := range wr.Contents {
+			bytes, err := data.Bytes()
 			if err != nil {
 				return []byte{}, err
 			}
-
-			addr = AbsAddress(offset + blockAddress + uint(dataOffset))
-
-			stagingBuf, ok := changes[newData.PartyIndex]
-			if !ok {
-				changes[newData.PartyIndex] = StagingBuffer{
-					addr,
-					crypt.DecryptPokemon(savefile[offset:]), // entire single party pokemon (236B)
-				}
-
-				copy(changes[newData.PartyIndex].Updates[blockAddress+uint(dataOffset):], bytes)
-			} else {
-				copy(stagingBuf.Updates[blockAddress+uint(dataOffset):], bytes)
+			fmt.Printf("%s: % x\n", req, bytes)
+	
+			offset := base + wr.PartyIndex * consts.PARTY_POKEMON_SIZE
+			personality := binary.LittleEndian.Uint32(savefile[offset : offset+4])
+	
+			// fmt.Printf("% x\n", savefile[offset:offset+36])
+	
+			var dataOffset int
+			var blockIndex int
+	
+			if req == ITEM {
+				dataOffset = consts.BLOCK_A_ITEM
+				blockIndex = shuffler.A
+			} else if req == ABILITY {
+				dataOffset = consts.BLOCK_A_ABILITY
+				blockIndex = shuffler.A
+			} else if req == EV {
+				dataOffset = consts.BLOCK_A_EV
+				blockIndex = shuffler.A
+			} else if req == IV {
+				dataOffset = consts.BLOCK_B_IV
+				blockIndex = shuffler.B
+			} else if req == NICKNAME {
+				dataOffset = consts.BLOCK_C_NICKNAME
+				blockIndex = shuffler.C
+			} else if req == LEVEL {
+				dataOffset = consts.BATTLE_STATS_LEVEL
+				blockIndex = -1
+			} else if req == BATTLE_STATS {
+				dataOffset = consts.BATTLE_STATS_STAT
+				blockIndex = -1
 			}
-		} else {
-			addr = AbsAddress(offset + 0x88 + uint(dataOffset))
-
-			stagingBuf, ok := changes[newData.PartyIndex]
-			if !ok {
-				changes[newData.PartyIndex] = StagingBuffer{
-					addr,
-					crypt.DecryptPokemon(savefile[offset:]), // entire single party pokemon (236B)
+	
+			var addr AbsAddress
+	
+			if blockIndex != -1 {
+				blockAddress, err := shuffler.GetPokemonBlockLocation(uint(blockIndex), personality)
+				if err != nil {
+					return []byte{}, err
 				}
-
-				copy(changes[newData.PartyIndex].Updates[0x88+uint(dataOffset):], bytes)
+	
+				addr = AbsAddress(offset + blockAddress + uint(dataOffset))
+	
+				stagingBuf, ok := changes[wr.PartyIndex]
+				if !ok {
+					changes[wr.PartyIndex] = StagingBuffer{
+						addr,
+						crypt.DecryptPokemon(savefile[offset:]), // entire single party pokemon (236B)
+					}
+	
+					copy(changes[wr.PartyIndex].Updates[blockAddress+uint(dataOffset):], bytes)
+				} else {
+					copy(stagingBuf.Updates[blockAddress+uint(dataOffset):], bytes)
+				}
 			} else {
-				copy(stagingBuf.Updates[0x88+uint(dataOffset):], bytes)
+				addr = AbsAddress(offset + 0x88 + uint(dataOffset))
+	
+				stagingBuf, ok := changes[wr.PartyIndex]
+				if !ok {
+					changes[wr.PartyIndex] = StagingBuffer{
+						addr,
+						crypt.DecryptPokemon(savefile[offset:]), // entire single party pokemon (236B)
+					}
+	
+					copy(changes[wr.PartyIndex].Updates[0x88+uint(dataOffset):], bytes)
+				} else {
+					copy(stagingBuf.Updates[0x88+uint(dataOffset):], bytes)
+				}
 			}
-		}
-
-		fmt.Printf(
-			"uipdates! (len=%d): % x\n", 
-			len(changes[newData.PartyIndex].Updates), 
-			changes[newData.PartyIndex].Updates,
-		)
-
-		// fmt.Printf("Before: % x\n", savefile[addr : addr+20])
-		// copy(savefile[addr:], bytes)
-		// fmt.Printf("After:  % x\n", savefile[addr : addr+20])
-		// fmt.Print("-------\n\n")
-
-		if _, seen := updatedPokemonIndexes[newData.PartyIndex]; !seen {
-			updatedPokemonIndexes[newData.PartyIndex] = true
+	
+			fmt.Printf(
+				"uipdates! (len=%d): % x\n", 
+				len(changes[wr.PartyIndex].Updates), 
+				changes[wr.PartyIndex].Updates,
+			)
+	
+			// fmt.Printf("Before: % x\n", savefile[addr : addr+20])
+			// copy(savefile[addr:], bytes)
+			// fmt.Printf("After:  % x\n", savefile[addr : addr+20])
+			// fmt.Print("-------\n\n")
+	
+			if _, seen := updatedPokemonIndexes[wr.PartyIndex]; !seen {
+				updatedPokemonIndexes[wr.PartyIndex] = true
+			}
 		}
 	}
 

@@ -24,7 +24,7 @@ func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 	return rom_reader.GetPartyPokemon(partyData), nil
 }
 
-func Write(savefile []byte, newBytes rom_writer.WriteRequests) ([]byte, error) {
+func Write(savefile []byte, newBytes []rom_writer.WriteRequests) ([]byte, error) {
 	if err := validator.Validate(savefile); err != nil {
 		return []byte{}, err
 	}
