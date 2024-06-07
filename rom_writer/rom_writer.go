@@ -136,9 +136,17 @@ type WriteRequests struct {
 
 type AbsAddress uint
 
+type StagingBuffer struct {
+	Address AbsAddress
+	Updates []byte
+}
+
+type StagingMap map[uint]StagingBuffer
+
 func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteRequests) ([]byte, error) {
-	updatedPokemonIndexes := make([]uint, 0)
+	updatedPokemonIndexes := make(map[uint]bool, 0)
 	base := chunk.SmallBlock.Address + consts.PERSONALITY_OFFSET
+	changes := make(StagingMap)
 
 	for req, data := range newData.Contents {
 		bytes, err := data.Bytes()
@@ -150,33 +158,38 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 		offset := base + newData.PartyIndex * consts.PARTY_POKEMON_SIZE
 		personality := binary.LittleEndian.Uint32(savefile[offset : offset+4])
 
-		var writeLocation int
+		fmt.Printf("% x\n", savefile[offset:offset+36])
+
+		var dataOffset int
 		var blockIndex int
 
 		if req == ITEM {
-			writeLocation = consts.BLOCK_A_ITEM
+			dataOffset = consts.BLOCK_A_ITEM
 			blockIndex = shuffler.A
 		} else if req == ABILITY {
-			writeLocation = consts.BLOCK_A_ABILITY
+			dataOffset = consts.BLOCK_A_ABILITY
 			blockIndex = shuffler.A
 		} else if req == EV {
-			writeLocation = consts.BLOCK_A_EV
+			dataOffset = consts.BLOCK_A_EV
 			blockIndex = shuffler.A
 		} else if req == IV {
-			writeLocation = consts.BLOCK_B_IV
+			dataOffset = consts.BLOCK_B_IV
 			blockIndex = shuffler.B
 		} else if req == NICKNAME {
-			writeLocation = consts.BLOCK_C_NICKNAME
+			dataOffset = consts.BLOCK_C_NICKNAME
 			blockIndex = shuffler.C
 		} else if req == LEVEL {
-			writeLocation = consts.BATTLE_STATS_LEVEL
+			dataOffset = consts.BATTLE_STATS_LEVEL
 			blockIndex = -1
 		} else if req == BATTLE_STATS {
-			writeLocation = consts.BATTLE_STATS_STAT
+			dataOffset = consts.BATTLE_STATS_STAT
 			blockIndex = -1
 		}
 
 		var addr AbsAddress
+
+		decrypted := crypt.DecryptPokemon(savefile[offset:])
+		fmt.Printf("% x\n", decrypted)
 
 		if blockIndex != -1 {
 			blockAddress, err := shuffler.GetPokemonBlockLocation(uint(blockIndex), personality)
@@ -184,22 +197,49 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 				return []byte{}, nil
 			}
 
-			addr = AbsAddress(offset + blockAddress + uint(writeLocation))
+			addr = AbsAddress(offset + blockAddress + uint(dataOffset))
+
+			stagingBuf, ok := changes[newData.PartyIndex]
+			if !ok {
+				changes[newData.PartyIndex] = StagingBuffer{
+					addr,
+					crypt.DecryptPokemon(savefile[offset:]), // entire single party pokemon (236B)
+				}
+
+				copy(changes[newData.PartyIndex].Updates[blockAddress+uint(dataOffset):], bytes)
+			} else {
+				copy(stagingBuf.Updates[blockAddress+uint(dataOffset):], bytes)
+			}
 		} else {
-			addr = AbsAddress(offset + 0x88 + uint(writeLocation))
+			addr = AbsAddress(offset + 0x88 + uint(dataOffset))
+
+			stagingBuf, ok := changes[newData.PartyIndex]
+			if !ok {
+				changes[newData.PartyIndex] = StagingBuffer{
+					addr,
+					crypt.DecryptPokemon(savefile[offset:]), // entire single party pokemon (236B)
+				}
+
+				copy(changes[newData.PartyIndex].Updates[0x88+uint(dataOffset):], bytes)
+			} else {
+				copy(stagingBuf.Updates[0x88+uint(dataOffset):], bytes)
+			}
 		}
 
-		fmt.Printf("Before: % x\n", savefile[addr : addr+20])
-		copy(savefile[addr:], bytes)
-		fmt.Printf("After:  % x\n", savefile[addr : addr+20])
-		fmt.Print("-------\n\n")
-		updatedPokemonIndexes = append(updatedPokemonIndexes, newData.PartyIndex)
+		// fmt.Printf("Before: % x\n", savefile[addr : addr+20])
+		// copy(savefile[addr:], bytes)
+		// fmt.Printf("After:  % x\n", savefile[addr : addr+20])
+		// fmt.Print("-------\n\n")
+		
+		if _, seen := updatedPokemonIndexes[newData.PartyIndex]; !seen {
+			updatedPokemonIndexes[newData.PartyIndex] = true
+		}
 	}
 
-	// TODO: encrypt the modified small block (at per-pokemon level)
-	for _, i := range updatedPokemonIndexes {
+	for i := range updatedPokemonIndexes {
 		pokemonOffset := base + i * consts.PARTY_POKEMON_SIZE
-		encrypted := crypt.EncryptPokemon(savefile[pokemonOffset:])
+		fmt.Printf("changes for partyPokemon[%d]: % x\n", i, changes[i].Updates)
+		encrypted := crypt.EncryptPokemon(changes[i].Updates)
 
 		copy(savefile[AbsAddress(pokemonOffset):], encrypted)
 	}
@@ -207,11 +247,9 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 	start := chunk.SmallBlock.Address
 	end := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
 	newChecksum := crypt.CRC16_CCITT(savefile[start : end])
-	// TODO: compute & update checksums at a party-pokemon level, and at the whole block-level
+
 	fmt.Printf("Before (checksum): % x\n", savefile[end : end+20])
-
 	binary.LittleEndian.PutUint16(savefile[end + 18:], newChecksum)
-
 	fmt.Printf("After (checksum):  % x\n", savefile[end : end+20])
 	fmt.Print("-------\n\n")
 
