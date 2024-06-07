@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/char_encoder"
+	"github.com/dingdongg/pkmn-rom-parser/v3/char"
 	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v3/data"
 )
@@ -38,7 +38,7 @@ type Pokemon struct {
 	Nature  string
 	Ability string
 	EVs     Stats
-	IVs		Stats
+	IVs     Stats
 }
 
 const (
@@ -113,7 +113,7 @@ func getPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error)
 func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	offset := partyIndex * PARTY_POKEMON_SIZE
 	plaintext := crypt.DecryptPokemon(ciphertext[offset:])
-	personality := binary.LittleEndian.Uint32(plaintext[0 : 4])
+	personality := binary.LittleEndian.Uint32(plaintext[0:4])
 
 	blockA, err := getPokemonBlock(plaintext, A, personality)
 	if err != nil {
@@ -130,9 +130,9 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 		log.Fatal("Unexpected error while parsing block C: ", err)
 	}
 
-	ivBytes := binary.LittleEndian.Uint32(blockB[0x10 : 0x14])
+	ivBytes := binary.LittleEndian.Uint32(blockB[0x10:0x14])
 
-	ivs := Stats {
+	ivs := Stats{
 		uint((ivBytes >> 0) & 0b11111),
 		uint((ivBytes >> 5) & 0b11111),
 		uint((ivBytes >> 10) & 0b11111),
@@ -164,7 +164,7 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 
 	for i := 0; i < pokemonNameLength; i += 2 {
 		charIndex := binary.LittleEndian.Uint16(blockC[i : i+2])
-		str, err := char_encoder.Char(charIndex)
+		str, err := char.Char(charIndex)
 		if err != nil {
 			break
 		}
@@ -173,7 +173,7 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 
 	fmt.Printf("Pokemon: '%s'\n", name)
 
-	battleStatsPlaintext := crypt.DecryptBattleStats(ciphertext[offset + 0x88:], personality)
+	battleStatsPlaintext := crypt.DecryptBattleStats(ciphertext[offset+0x88:], personality)
 	battleStats := BattleStat{
 		uint(battleStatsPlaintext[4]),
 		Stats{
