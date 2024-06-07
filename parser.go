@@ -30,6 +30,5 @@ func Write(savefile []byte, newBytes rom_writer.WriteRequests) ([]byte, error) {
 	}
 
 	chunk := locator.GetLatestSaveChunk(savefile)
-	partyData := chunk.SmallBlock.BlockData[consts.PERSONALITY_OFFSET:]
-	return rom_writer.UpdatePartyPokemon(partyData, newBytes)
+	return rom_writer.UpdatePartyPokemon(savefile, *chunk, newBytes)
 }

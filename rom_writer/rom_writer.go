@@ -2,9 +2,13 @@ package rom_writer
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v3/char"
+	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v3/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v3/validator"
 )
 
 /*
@@ -87,14 +91,14 @@ func (ws WriteString) Bytes() ([]byte, error) {
 	// TODO: may have to limit the max length of the incoming string
 	res := make([]byte, 0)
 
-	max := func(a int, b int) int {
-		if a > b {
+	min := func(a int, b int) int {
+		if a < b {
 			return a
 		}
 		return b
 	}
 
-	end := max(len(ws.Val) - 1, 22)
+	end := min(len(ws.Val), 11)
 
 	for i := 0; i < end; i++ {
 		c := ws.Val[i]
@@ -130,22 +134,86 @@ type WriteRequests struct {
 	Contents NewData
 }
 
-func UpdatePartyPokemon(ciphertext []byte, newData WriteRequests) ([]byte, error) {
-	return []byte{}, nil
+type AbsAddress uint
 
-	// for req, data := range newData.Contents {
-	// 	switch req {
-	// 		case ITEM:
-	// 		case ABILITY:
-	// 		case IV:
-	// 		case EV: {
-	// 		}
-		
-	// 	}
-	// 	offset := newData.PartyIndex * 236
-	// 	bytes := ciphertext[offset:]
-	// 	buffer := crypt.DecryptPokemon(bytes)
-	// 	personality := binary.LittleEndian.Uint32(buffer[0:4])
-	// 	battleStatsBuffer := crypt.DecryptBattleStats(ciphertext[offset + 0x88:], personality)
-	// }
+func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteRequests) ([]byte, error) {
+	updatedPokemonIndexes := make([]uint, 0)
+	base := chunk.SmallBlock.Address + consts.PERSONALITY_OFFSET
+
+	for req, data := range newData.Contents {
+		bytes, err := data.Bytes()
+		if err != nil {
+			return []byte{}, err
+		}
+		fmt.Printf("%s: % x\n", req, bytes)
+
+		offset := base + newData.PartyIndex * consts.PARTY_POKEMON_SIZE
+		personality := binary.LittleEndian.Uint32(savefile[offset : offset+4])
+
+		var writeLocation int
+		var blockIndex int
+
+		if req == ITEM {
+			writeLocation = consts.BLOCK_A_ITEM
+			blockIndex = shuffler.A
+		} else if req == ABILITY {
+			writeLocation = consts.BLOCK_A_ABILITY
+			blockIndex = shuffler.A
+		} else if req == EV {
+			writeLocation = consts.BLOCK_A_EV
+			blockIndex = shuffler.A
+		} else if req == IV {
+			writeLocation = consts.BLOCK_B_IV
+			blockIndex = shuffler.B
+		} else if req == NICKNAME {
+			writeLocation = consts.BLOCK_C_NICKNAME
+			blockIndex = shuffler.C
+		} else if req == LEVEL {
+			writeLocation = consts.BATTLE_STATS_LEVEL
+			blockIndex = -1
+		} else if req == BATTLE_STATS {
+			writeLocation = consts.BATTLE_STATS_STAT
+			blockIndex = -1
+		}
+
+		var addr AbsAddress
+
+		if blockIndex != -1 {
+			blockAddress, err := shuffler.GetPokemonBlockLocation(uint(blockIndex), personality)
+			if err != nil {
+				return []byte{}, nil
+			}
+
+			addr = AbsAddress(offset + blockAddress + uint(writeLocation))
+		} else {
+			addr = AbsAddress(offset + 0x88 + uint(writeLocation))
+		}
+
+		fmt.Printf("Before: % x\n", savefile[addr : addr+20])
+		copy(savefile[addr:], bytes)
+		fmt.Printf("After:  % x\n", savefile[addr : addr+20])
+		fmt.Print("-------\n\n")
+		updatedPokemonIndexes = append(updatedPokemonIndexes, newData.PartyIndex)
+	}
+
+	// TODO: encrypt the modified small block (at per-pokemon level)
+	for _, i := range updatedPokemonIndexes {
+		pokemonOffset := base + i * consts.PARTY_POKEMON_SIZE
+		encrypted := crypt.EncryptPokemon(savefile[pokemonOffset:])
+
+		copy(savefile[AbsAddress(pokemonOffset):], encrypted)
+	}
+
+	start := chunk.SmallBlock.Address
+	end := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
+	newChecksum := crypt.CRC16_CCITT(savefile[start : end])
+	// TODO: compute & update checksums at a party-pokemon level, and at the whole block-level
+	fmt.Printf("Before (checksum): % x\n", savefile[end : end+20])
+
+	binary.LittleEndian.PutUint16(savefile[end + 18:], newChecksum)
+
+	fmt.Printf("After (checksum):  % x\n", savefile[end : end+20])
+	fmt.Print("-------\n\n")
+
+	return savefile, nil
 }
