@@ -1,4 +1,4 @@
-package char_encoder
+package char
 
 import "errors"
 
