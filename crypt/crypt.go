@@ -25,7 +25,9 @@ func EncryptPokemon(plaintext []byte) []byte {
 	// UPDATE: I think im supposed to use the new checksum
 	// checksum := binary.LittleEndian.Uint16(plaintext[6 : 8]) 
 
-	buffer := plaintext[:8]
+	buffer := make([]byte, 8)
+	copy(buffer, plaintext[:8])
+
 	plaintextSum := uint16(0)
 
 	for i := 0x8; i < 0x87; i += 2 {
@@ -53,7 +55,8 @@ func DecryptPokemon(ciphertext []byte) []byte {
 
 	rand := prng.Init(checksum, personality)
 
-	buffer := ciphertext[:8]
+	buffer := make([]byte, 8)
+	copy(buffer, ciphertext[:8])
 	plaintextSum := uint16(0)
 
 	for i := 0x8; i < 0x87; i += 2 {
