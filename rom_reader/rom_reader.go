@@ -2,7 +2,6 @@ package rom_reader
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"log"
 
@@ -55,38 +54,30 @@ func GetPartyPokemon(ciphertext []byte) []Pokemon {
 	return party
 }
 
-func getPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error) {
-	if block >= A && block <= D {
-		shiftValue := ((personality & 0x03E000) >> 0x0D) % 24
-		unshuffleInfo := shuffler.Get(shiftValue)
-		startAddr := unshuffleInfo.GetUnshuffledPos(block)
-		blockChunk := buf[startAddr : startAddr+consts.BLOCK_SIZE_BYTES]
-
-		return blockChunk, nil
-	}
-
-	return make([]byte, 0), errors.New("invalid block index")
-}
-
 func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	offset := partyIndex * consts.PARTY_POKEMON_SIZE
 	plaintext := crypt.DecryptPokemon(ciphertext[offset:])
 	personality := binary.LittleEndian.Uint32(plaintext[0:4])
+	fmt.Println("decrypted")
 
-	blockA, err := getPokemonBlock(plaintext, A, personality)
+	blockA, err := shuffler.GetPokemonBlock(plaintext, A, personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block A: ", err)
 	}
 
-	blockB, err := getPokemonBlock(plaintext, B, personality)
+	fmt.Printf("BLOCK A:\n => % x\n", blockA)
+
+	blockB, err := shuffler.GetPokemonBlock(plaintext, B, personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block B: ", err)
 	}
 
-	blockC, err := getPokemonBlock(plaintext, C, personality)
+	blockC, err := shuffler.GetPokemonBlock(plaintext, C, personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block C: ", err)
 	}
+
+	fmt.Println("we made it")
 
 	ivBytes := binary.LittleEndian.Uint32(blockB[0x10:0x14])
 
@@ -104,17 +95,17 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	dexId := binary.LittleEndian.Uint16(blockA[:2])
 	heldItem, err := data.GetItem(binary.LittleEndian.Uint16(blockA[2:4]))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error while parsing item: ", err)
 	}
 
 	nature, err := data.GetNature(uint(personality % 25))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error while parsing nature: ", err)
 	}
 
 	ability, err := data.GetAbility(uint(blockA[0xD]))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error while parsing ability: ", err)
 	}
 
 	pokemonNameLength := 22

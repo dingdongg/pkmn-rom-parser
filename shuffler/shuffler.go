@@ -1,8 +1,11 @@
 package shuffler
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
 )
 
 // from https://projectpokemon.org/home/docs/gen-4/pkm-structure-r65/
@@ -70,7 +73,37 @@ var unshuffleTable [24]blockOrder = [24]blockOrder{
 	{[4]uint{D, C, B, A}, [4]uint{D, C, B, A}}, // DCBA DCBA
 }
 
-// block is one of 0, 1, 2, 3
+// Unless you need the offset address to the block, you want to use this function (NOT GetPokemonBlockLocation())
+func GetPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error) {
+	if block >= A && block <= D {
+		shiftValue := ((personality & 0x03E000) >> 0x0D) % 24
+		unshuffleInfo := unshuffleTable[shiftValue]
+		startAddr := unshuffleInfo.GetUnshuffledPos(block)
+		blockChunk := buf[startAddr : startAddr+consts.BLOCK_SIZE_BYTES]
+
+		return blockChunk, nil
+	}
+
+	return make([]byte, 0), errors.New("invalid block index")
+}
+
+// Used to get the absolute memory address location of the block. Mainly for writing purposes ATM
+func GetPokemonBlockLocation(block uint, personality uint32) (uint, error) {
+	if block  >= A && block <= D {
+		shiftValue := ((personality & 0x03E000) >> 0x0D) % 24
+		unshuffleInfo := unshuffleTable[shiftValue]
+		startAddr := unshuffleInfo.GetUnshuffledPos(block)
+		
+		return startAddr, nil
+	}
+	return 0, errors.New("invalid block index")
+}
+
+/* 
+	block is one of 0, 1, 2, 3
+
+	metadata consists of a pokemon's PID & checksum 
+*/
 func (bo blockOrder) GetUnshuffledPos(block uint) uint {
 	metadataOffset := uint(0x8)
 	startIndex := bo.OriginalPos[block]

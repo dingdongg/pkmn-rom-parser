@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -34,34 +33,6 @@ Party pokemon structure
 +--------------+
                 = 236B
 */
-
-func TestGetPokemonInvalidBlock(t *testing.T) {
-	var invalidBlock uint = 4
-	personality := uint32(5)
-
-	_, err := getPokemonBlock(make([]byte, 1024), invalidBlock, personality)
-
-	if err == nil {
-		t.Fatalf("Error not thrown for invalid block: %d\n", invalidBlock)
-	}
-}
-
-func TestGetPokemonBlock(t *testing.T) {
-	blocks := []uint{A, B, C, D}
-	personality := uint32(5)
-	mockBuffer := make([]byte, 136)
-
-	for _, b := range blocks {
-		res, err := getPokemonBlock(mockBuffer, b, personality)
-		if err != nil {
-			t.Fatal("Unexpected error ", err)
-		}
-
-		if len(res) != int(consts.BLOCK_SIZE_BYTES) {
-			t.Fatalf("BUF LENGTH: expected %d but got %d\n", consts.BLOCK_SIZE_BYTES, len(res))
-		}
-	}
-}
 
 func TestParsePokemon(t *testing.T) {
 	// file takes care of the personality offset

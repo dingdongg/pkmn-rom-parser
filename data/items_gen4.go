@@ -1,6 +1,9 @@
 package data
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type itemInfo struct {
 	Name        string
@@ -550,7 +553,7 @@ var itemsTable [538]itemInfo = [538]itemInfo{
 
 func GetItem(index uint16) (itemInfo, error) {
 	if index >= uint16(len(itemsTable)) {
-		return itemInfo{}, errors.New("invalid index")
+		return itemInfo{}, errors.New(fmt.Sprintf("invalid index: %d\n", index))
 	}
 
 	return itemsTable[index], nil
