@@ -110,7 +110,12 @@ func (ws WriteString) Bytes() ([]byte, error) {
 		res = append(res, little, big)
 	}
 
-	res = append(res, 0xFF) // how many "0xFF"s do I insert????
+	res = append(res, 0xFF, 0xFF)
+	
+	// need to fill the (22 - len(res)) elements with 0s
+	for len(res) != 22 {
+		res = append(res, 0x0)
+	}
 
 	return res, nil
 }
