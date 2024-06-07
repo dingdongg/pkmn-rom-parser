@@ -11,10 +11,8 @@ import (
 const PERSONALITY_OFFSET = 0xA0
 
 func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
-	var res []rom_reader.Pokemon
-
 	if err := validator.Validate(savefile); err != nil {
-		return res, err
+		return []rom_reader.Pokemon{}, err
 	}
 
 	chunk := locator.GetLatestSaveChunk(savefile)
@@ -23,9 +21,5 @@ func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 	fmt.Println(chunk.SmallBlock.Footer)
 	fmt.Println(chunk.BigBlock.Footer)
 
-	for i := uint(0); i < 6; i++ {
-		res = append(res, rom_reader.GetPokemon(partyData, i))
-	}
-
-	return res, nil
+	return rom_reader.GetPartyPokemon(partyData), nil
 }
