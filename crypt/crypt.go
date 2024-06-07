@@ -46,6 +46,18 @@ func EncryptPokemon(plaintext []byte) []byte {
 	}
 
 	binary.LittleEndian.PutUint16(buffer[6:8], plaintextSum)
+	return append(buffer, EncryptBattleStats(plaintext[0x88:], personality)...)
+}
+
+func EncryptBattleStats(plaintext []byte, personality uint32) []byte {
+	bsprng := prng.InitBattleStatPRNG(personality)
+	var buffer []byte
+
+	for i := 0; i < 0x64; i += 2 {
+		decrypted := bsprng.Next() ^ binary.LittleEndian.Uint16(plaintext[i:i+2])
+		buffer = append(buffer, byte(decrypted&0xFF), byte((decrypted>>8)&0xFF))
+	}
+
 	return buffer
 }
 
@@ -72,7 +84,7 @@ func DecryptPokemon(ciphertext []byte) []byte {
 		log.Fatalf("Checksum invalid. expected 0x%x, got 0x%x\n", checksum, plaintextSum)
 	}
 
-	return buffer
+	return append(buffer, DecryptBattleStats(ciphertext[0x88:], personality)...)
 }
 
 // first block of ciphertext points to offset 0x88 in a whole party pokemon block
@@ -80,7 +92,7 @@ func DecryptBattleStats(ciphertext []byte, personality uint32) []byte {
 	bsprng := prng.InitBattleStatPRNG(personality)
 	var plaintext []byte
 
-	for i := 0; i < 0x14; i += 2 {
+	for i := 0; i < 0x64; i += 2 {
 		decrypted := bsprng.Next() ^ binary.LittleEndian.Uint16(ciphertext[i:i+2])
 		plaintext = append(plaintext, byte(decrypted&0xFF), byte((decrypted>>8)&0xFF))
 	}
