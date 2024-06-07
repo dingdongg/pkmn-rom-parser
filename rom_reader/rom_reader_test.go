@@ -78,13 +78,13 @@ func TestParseUpdatedPokemon(t *testing.T) {
 		461,
 		"ABCDE",
 		BattleStat{
-			58,
-			Stats{163, 181, 93, 63, 106, 215},
+			100,
+			Stats{123, 456, 789, 999, 111, 101},
 		},
-		"None",
+		"Safari Ball",
 		"Jolly",
 		"Pressure",
-		Stats{0, 255, 0, 0, 3, 252},
+		Stats{255, 255, 255, 255, 255, 255},
 		Stats{31, 31, 31, 31, 31, 31},
 	}
 
