@@ -7,8 +7,8 @@ import (
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v3/char_encoder"
+	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v3/data"
-	"github.com/dingdongg/pkmn-rom-parser/v3/prng"
 )
 
 type blockOrder struct {
@@ -51,203 +51,6 @@ const (
 const BLOCK_SIZE_BYTES uint = 32
 const PARTY_POKEMON_SIZE uint = 236
 
-// only includes abilities for generations 3-5
-var abilityTable [165]string = [165]string{
-	"", // placeholder to account 1-based ability ID indexing
-	"Stench",
-	"Drizzle",
-	"Speed Boost",
-	"Battle Armor",
-	"Sturdy",
-	"Damp",
-	"Limber",
-	"Sand Veil",
-	"Static",
-	"Volt Absorb",
-	"Water Absorb",
-	"Oblivious",
-	"Cloud Nine",
-	"Compound Eyes",
-	"Insomnia",
-	"Color Change",
-	"Immunity",
-	"Flash Fire",
-	"Shield Dust",
-	"Own Tempo",
-	"Suction Cups",
-	"Intimidate",
-	"Shadow Tag",
-	"Rough Skin",
-	"Wonder Guard",
-	"Levitate",
-	"Effect Spore",
-	"Synchronize",
-	"Clear Body",
-	"Natural Cure",
-	"Lightning Rod",
-	"Serene Grace",
-	"Swift Swim",
-	"Chlorophyll",
-	"Illuminate",
-	"Trace",
-	"Huge Power",
-	"Poison Point",
-	"Inner Focus",
-	"Magma Armor",
-	"Water Veil",
-	"Magnet Pull",
-	"Soundproof",
-	"Rain Dish",
-	"Sand Stream",
-	"Pressure",
-	"Thick Fat",
-	"Early Bird",
-	"Flame Body",
-	"Run Away",
-	"Keen Eye",
-	"Hyper Cutter",
-	"Pickup",
-	"Truant",
-	"Hustle",
-	"Cute Charm",
-	"Plus",
-	"Minus",
-	"Forecast",
-	"Sticky Hold",
-	"Shed Skin",
-	"Guts",
-	"Marvel Scale",
-	"Liquid Ooze",
-	"Overgrow",
-	"Blaze",
-	"Torrent",
-	"Swarm",
-	"Rock Head",
-	"Drought",
-	"Arena Trap",
-	"Vital Spirit",
-	"White Smoke",
-	"Pure Power",
-	"Shell Armor",
-	"Air Lock",
-	"Tangled Feet",
-	"Motor Drive",
-	"Rivalry",
-	"Steadfast",
-	"Snow Cloak",
-	"Gluttony",
-	"Anger Point",
-	"Unburden",
-	"Heatproof",
-	"Simple",
-	"Dry Skin",
-	"Download",
-	"Iron Fist",
-	"Poison Heal",
-	"Adaptability",
-	"Skill Link",
-	"Hydration",
-	"Solar Power",
-	"Quick Feet",
-	"Normalize",
-	"Sniper",
-	"Magic Guard",
-	"No Guard",
-	"Stall",
-	"Technician",
-	"Leaf Guard",
-	"Klutz",
-	"Mold Breaker",
-	"Super Luck",
-	"Aftermath",
-	"Anticipation",
-	"Forewarn",
-	"Unaware",
-	"Tinted Lens",
-	"Filter",
-	"Slow Start",
-	"Scrappy",
-	"Storm Drain",
-	"Ice Body",
-	"Solid Rock",
-	"Snow Warning",
-	"Honey Gather",
-	"Frisk",
-	"Reckless",
-	"Multitype",
-	"Flower Gift",
-	"Bad Dreams",
-	"Pickpocket",
-	"Sheer Force",
-	"Contrary",
-	"Unnerve",
-	"Defiant",
-	"Defeatist",
-	"Cursed Body",
-	"Healer",
-	"Friend Guard",
-	"Weak Armor",
-	"Heavy Metal",
-	"Light Metal",
-	"Multiscale",
-	"Toxic Boost",
-	"Flare Boost",
-	"Harvest",
-	"Telepathy",
-	"Moody",
-	"Overcoat",
-	"Poison Touch",
-	"Regenerator",
-	"Big Pecks",
-	"Sand Rush",
-	"Wonder Skin",
-	"Analytic",
-	"Illusion",
-	"Imposter",
-	"Infiltrator",
-	"Mummy",
-	"Moxie",
-	"Justified",
-	"Rattled",
-	"Magic Bounce",
-	"Sap Sipper",
-	"Prankster",
-	"Sand Force",
-	"Iron Barbs",
-	"Zen Mode",
-	"Victory Star",
-	"Turboblaze",
-	"Teravolt",
-}
-
-var natureTable [25]string = [25]string{
-	"Hardy",
-	"Lonely",
-	"Brave",
-	"Adamant",
-	"Naughty",
-	"Bold",
-	"Docile",
-	"Relaxed",
-	"Impish",
-	"Lax",
-	"Timid",
-	"Hasty",
-	"Serious",
-	"Jolly",
-	"Naive",
-	"Modest",
-	"Mild",
-	"Quiet",
-	"Bashful",
-	"Rash",
-	"Calm",
-	"Gentle",
-	"Sassy",
-	"Careful",
-	"Quirky",
-}
-
 // populated with results from the shuffler package!
 var unshuffleTable [24]blockOrder = [24]blockOrder{
 	{[4]uint{A, B, C, D}, [4]uint{A, B, C, D}}, // ABCD ABCD
@@ -276,16 +79,14 @@ var unshuffleTable [24]blockOrder = [24]blockOrder{
 	{[4]uint{D, C, B, A}, [4]uint{D, C, B, A}}, // DCBA DCBA
 }
 
-// `ciphertext` must be a slice with the first byte
-// referring to the first pokemon data structure
-func GetPokemon(ciphertext []byte, partyIndex uint) Pokemon {
-	offset := partyIndex * PARTY_POKEMON_SIZE
+func GetPartyPokemon(ciphertext []byte) []Pokemon {
+	var party []Pokemon
 
-	personality := binary.LittleEndian.Uint32(ciphertext[offset : offset+4])
-	checksum := binary.LittleEndian.Uint16(ciphertext[offset+6 : offset+8])
+	for i := uint(0); i < 6; i++ {
+		party = append(party, parsePokemon(ciphertext, i))
+	}
 
-	rand := prng.Init(checksum, personality)
-	return decryptPokemon(rand, ciphertext[offset:])
+	return party
 }
 
 // block is one of 0, 1, 2, 3
@@ -309,57 +110,24 @@ func getPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error)
 	return make([]byte, 0), errors.New("invalid block index")
 }
 
-// first block of ciphertext points to offset 0x88 in a party pokemon block
-// TODO: needs some validation/testing
-func getPokemonBattleStats(ciphertext []byte, personality uint32) BattleStat {
-	bsprng := prng.InitBattleStatPRNG(personality)
-	var plaintext []byte
+func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
+	offset := partyIndex * PARTY_POKEMON_SIZE
+	plaintext := crypt.DecryptPokemon(ciphertext[offset:])
+	personality := binary.LittleEndian.Uint32(plaintext[0 : 4])
 
-	for i := 0; i < 0x14; i += 2 {
-		decrypted := bsprng.Next() ^ binary.LittleEndian.Uint16(ciphertext[i:i+2])
-		plaintext = append(plaintext, byte(decrypted&0xFF), byte((decrypted>>8)&0xFF))
-	}
-
-	stats := Stats{
-		uint(binary.LittleEndian.Uint16(plaintext[0x8:0xA])),
-		uint(binary.LittleEndian.Uint16(plaintext[0xA:0xC])),
-		uint(binary.LittleEndian.Uint16(plaintext[0xC:0xE])),
-		uint(binary.LittleEndian.Uint16(plaintext[0x10:0x12])),
-		uint(binary.LittleEndian.Uint16(plaintext[0x12:0x14])),
-		uint(binary.LittleEndian.Uint16(plaintext[0xE:0x10])),
-	}
-
-	return BattleStat{uint(plaintext[4]), stats}
-}
-
-func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
-	plaintext_buf := ciphertext[:8]
-	plaintext_sum := uint16(0)
-
-	// 1. XOR to get plaintext words
-	for i := 0x8; i < 0x87; i += 0x2 {
-		word := binary.LittleEndian.Uint16(ciphertext[i : i+2])
-		plaintext := word ^ prng.Next()
-		plaintext_sum += plaintext
-		littleByte := byte(plaintext & 0x00FF)
-		bigByte := byte((plaintext >> 8) & 0x00FF)
-		plaintext_buf = append(plaintext_buf, littleByte, bigByte)
-	}
-
-	if plaintext_sum == prng.Checksum {
-		fmt.Println("checksum is valid!")
-	} else {
-		fmt.Printf("Checksum invalid. expected 0x%x, got 0x%x\n", prng.Checksum, plaintext_sum)
-	}
-
-	blockA, err := getPokemonBlock(plaintext_buf, A, prng.Personality)
+	blockA, err := getPokemonBlock(plaintext, A, personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block A: ", err)
 	}
 
-	blockB, err := getPokemonBlock(plaintext_buf, B, prng.Personality)
+	blockB, err := getPokemonBlock(plaintext, B, personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block B: ", err)
+	}
+
+	blockC, err := getPokemonBlock(plaintext, C, personality)
+	if err != nil {
+		log.Fatal("Unexpected error while parsing block C: ", err)
 	}
 
 	ivBytes := binary.LittleEndian.Uint32(blockB[0x10 : 0x14])
@@ -373,21 +141,23 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 		uint((ivBytes >> 15) & 0b11111),
 	}
 
-	// ivBlock := binary.LittleEndian.Uint32(blockB[0x10:0x14])
-	fmt.Printf("% x\n", blockB[0x10:0x14])
-
-	blockC, err := getPokemonBlock(plaintext_buf, C, prng.Personality)
-	if err != nil {
-		log.Fatal("Unexpected error while parsing block C: ", err)
-	}
+	// fmt.Printf("% x\n", blockB[0x10:0x14])
 
 	dexId := binary.LittleEndian.Uint16(blockA[:2])
 	heldItem, err := data.GetItem(binary.LittleEndian.Uint16(blockA[2:4]))
 	if err != nil {
 		log.Fatal(err)
 	}
-	nature := natureTable[prng.Personality%25]
-	ability := abilityTable[binary.LittleEndian.Uint16(blockA[0xD:0xF])]
+
+	nature, err := data.GetNature(uint(personality % 25))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ability, err := data.GetAbility(uint(blockA[0xD]))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	pokemonNameLength := 22
 	name := ""
@@ -403,7 +173,18 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 
 	fmt.Printf("Pokemon: '%s'\n", name)
 
-	battleStats := getPokemonBattleStats(ciphertext[0x88:], prng.Personality)
+	battleStatsPlaintext := crypt.DecryptBattleStats(ciphertext[offset + 0x88:], personality)
+	battleStats := BattleStat{
+		uint(battleStatsPlaintext[4]),
+		Stats{
+			uint(binary.LittleEndian.Uint16(plaintext[0x8:0xA])),
+			uint(binary.LittleEndian.Uint16(plaintext[0xA:0xC])),
+			uint(binary.LittleEndian.Uint16(plaintext[0xC:0xE])),
+			uint(binary.LittleEndian.Uint16(plaintext[0x10:0x12])),
+			uint(binary.LittleEndian.Uint16(plaintext[0x12:0x14])),
+			uint(binary.LittleEndian.Uint16(plaintext[0xE:0x10])),
+		},
+	}
 
 	hpEVOffset := 0x10
 	attackEVOffset := 0x11
@@ -424,7 +205,7 @@ func decryptPokemon(prng prng.PRNG, ciphertext []byte) Pokemon {
 		evSum += int(blockA[hpEVOffset+i])
 	}
 
-	fmt.Printf("Total EV Spenditure: %d / 510\n", evSum)
+	// fmt.Printf("Total EV Spenditure: %d / 510\n", evSum)
 
 	return Pokemon{
 		dexId,
