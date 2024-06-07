@@ -2,6 +2,7 @@ package validator
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 )
 
@@ -54,31 +55,31 @@ var seeds = []uint{
 }
 
 // a "chunk" denotes a pair of small + big block that are adjacent in memory
-type chunk struct {
-	smallBlock block
-	bigBlock block
+type Chunk struct {
+	SmallBlock Block
+	BigBlock Block
 }
 
-type block struct {
-	blockData []byte
-	footer footer
+type Block struct {
+	BlockData []byte
+	Footer Footer
 }
 
-type footer struct {
-	identifier uint32
-	saveNumber	uint32
-	blockSize uint32
+type Footer struct {
+	Identifier uint32
+	SaveNumber	uint32
+	BlockSize uint32
 	K	uint32
 	T  uint16
-	checksum uint16
+	Checksum uint16
 }
 
 const savefileSize int = 1 << 19
 const footerSize uint = 0x14
 const secondChunkOffset uint = 0x40000
 
-func getFooter(buf []byte) footer {
-	return footer{
+func getFooter(buf []byte) Footer {
+	return Footer{
 		binary.LittleEndian.Uint32(buf[:0x4]),
 		binary.LittleEndian.Uint32(buf[0x4 : 0x8]),
 		binary.LittleEndian.Uint32(buf[0x8 : 0xC]),
@@ -89,7 +90,7 @@ func getFooter(buf []byte) footer {
 }
 
 // footer format specifier
-func (f footer) String() string {
+func (f Footer) String() string {
 	return fmt.Sprintf(`
 	footer {
 		identifier = 0x%x,
@@ -98,7 +99,7 @@ func (f footer) String() string {
 		K = 0x%x,
 		T = 0x%x,
 		checksum = 0x%x,
-	}`, f.identifier, f.saveNumber, f.blockSize, f.K, f.T, f.checksum)
+	}`, f.Identifier, f.SaveNumber, f.BlockSize, f.K, f.T, f.Checksum)
 }
 
 // Computes a checksum via the CRC16-CCITT algorithm on the given data
@@ -112,52 +113,52 @@ func crc16_ccitt(data []byte) uint16 {
 	return uint16(sum)
 }
 
-func (c chunk) isValid() bool {
-	smallChecksum := crc16_ccitt(c.smallBlock.blockData)
-	if smallChecksum != c.smallBlock.footer.checksum {
+func (c Chunk) isValid() bool {
+	smallChecksum := crc16_ccitt(c.SmallBlock.BlockData)
+	if smallChecksum != c.SmallBlock.Footer.Checksum {
 		return false
 	}
 
-	bigChecksum := crc16_ccitt(c.bigBlock.blockData)
-	return bigChecksum == c.bigBlock.footer.checksum
+	bigChecksum := crc16_ccitt(c.BigBlock.BlockData)
+	return bigChecksum == c.BigBlock.Footer.Checksum
 }
 
-func getChunk(savefile []byte, offset uint) chunk {
+func GetChunk(savefile []byte, offset uint) Chunk {
 	smallBlockFooterAddr := uint(0x0CF18) + offset
 	bigBlockFooterAddr := uint(0x1F0FC) + offset
 	bigBlockStart := uint(0xCF2C) + offset
 
-	smallBlock := block{
+	smallBlock := Block{
 		savefile[offset : smallBlockFooterAddr],	
 		getFooter(savefile[smallBlockFooterAddr : smallBlockFooterAddr+footerSize]),
 	}
 
-	bigBlock := block{
+	bigBlock := Block{
 		savefile[bigBlockStart : bigBlockFooterAddr],
 		getFooter(savefile[bigBlockFooterAddr : bigBlockFooterAddr+footerSize]),
 	}
 
-	return chunk{ smallBlock, bigBlock }
+	return Chunk{ smallBlock, bigBlock }
 }
 
 // validates the given .sav file
-func Validate(savefile []byte) bool {
+func Validate(savefile []byte) error {
 	if len(savefile) != savefileSize {
-		return false
+		return errors.New("invalid savefile")
 	}
 
-	firstChunk := getChunk(savefile, 0)
-	secondChunk := getChunk(savefile, secondChunkOffset)
+	firstChunk := GetChunk(savefile, 0)
+	secondChunk := GetChunk(savefile, secondChunkOffset)
 
 	if !firstChunk.isValid() {
 		fmt.Println("First chunk invalid")
-		return false
+		return errors.New("invalid savefile")
 	}
 
 	if !secondChunk.isValid() {
 		fmt.Println("Second chunk invalid")
-		return false
+		return errors.New("invalid savefile")
 	}
 
-	return true
+	return nil
 }
