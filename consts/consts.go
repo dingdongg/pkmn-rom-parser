@@ -1,0 +1,5 @@
+package consts
+
+const BLOCK_SIZE_BYTES = 32
+const PARTY_POKEMON_SIZE = 236
+const PERSONALITY_OFFSET = 0xA0

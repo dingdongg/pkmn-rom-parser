@@ -3,13 +3,12 @@ package parser
 import (
 	"fmt"
 
+	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v3/rom_reader"
 	"github.com/dingdongg/pkmn-rom-parser/v3/rom_writer"
 	"github.com/dingdongg/pkmn-rom-parser/v3/validator"
 	"github.com/dingdongg/pkmn-rom-parser/v3/validator/locator"
 )
-
-const PERSONALITY_OFFSET = 0xA0
 
 func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 	if err := validator.Validate(savefile); err != nil {
@@ -17,7 +16,7 @@ func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 	}
 
 	chunk := locator.GetLatestSaveChunk(savefile)
-	partyData := chunk.SmallBlock.BlockData[PERSONALITY_OFFSET:]
+	partyData := chunk.SmallBlock.BlockData[consts.PERSONALITY_OFFSET:]
 
 	fmt.Println(chunk.SmallBlock.Footer)
 	fmt.Println(chunk.BigBlock.Footer)
@@ -31,5 +30,6 @@ func Write(savefile []byte, newBytes rom_writer.WriteRequests) ([]byte, error) {
 	}
 
 	chunk := locator.GetLatestSaveChunk(savefile)
-	return rom_writer.UpdatePartyPokemon(chunk.SmallBlock.BlockData[PERSONALITY_OFFSET:], newBytes)
+	partyData := chunk.SmallBlock.BlockData[consts.PERSONALITY_OFFSET:]
+	return rom_writer.UpdatePartyPokemon(partyData, newBytes)
 }
