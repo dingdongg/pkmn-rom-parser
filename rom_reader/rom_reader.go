@@ -7,14 +7,11 @@ import (
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v3/char"
+	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v3/data"
+	"github.com/dingdongg/pkmn-rom-parser/v3/shuffler"
 )
-
-type blockOrder struct {
-	ShuffledPos [4]uint
-	OriginalPos [4]uint
-}
 
 type Stats struct {
 	Hp        uint
@@ -48,37 +45,6 @@ const (
 	D uint = iota
 )
 
-const BLOCK_SIZE_BYTES uint = 32
-const PARTY_POKEMON_SIZE uint = 236
-
-// populated with results from the shuffler package!
-var unshuffleTable [24]blockOrder = [24]blockOrder{
-	{[4]uint{A, B, C, D}, [4]uint{A, B, C, D}}, // ABCD ABCD
-	{[4]uint{A, B, D, C}, [4]uint{A, B, D, C}}, // ABDC ABDC
-	{[4]uint{A, C, B, D}, [4]uint{A, C, B, D}}, // ACBD ACBD
-	{[4]uint{A, C, D, B}, [4]uint{A, D, B, C}}, // ACDB ADBC
-	{[4]uint{A, D, B, C}, [4]uint{A, C, D, B}}, // ADBC ACDB
-	{[4]uint{A, D, C, B}, [4]uint{A, D, C, B}}, // ADCB ADCB
-	{[4]uint{B, A, C, D}, [4]uint{B, A, C, D}}, // BACD BACD
-	{[4]uint{B, A, D, C}, [4]uint{B, A, D, C}}, // BADC BADC
-	{[4]uint{B, C, A, D}, [4]uint{C, A, B, D}}, // BCAD CABD
-	{[4]uint{B, C, D, A}, [4]uint{D, A, B, C}}, // BCDA DABC
-	{[4]uint{B, D, A, C}, [4]uint{C, A, D, B}}, // BDAC CADB
-	{[4]uint{B, D, C, A}, [4]uint{D, A, C, B}}, // BDCA DACB
-	{[4]uint{C, A, B, D}, [4]uint{B, C, A, D}}, // CABD BCAD
-	{[4]uint{C, A, D, B}, [4]uint{B, D, A, C}}, // CADB BDAC
-	{[4]uint{C, B, A, D}, [4]uint{C, B, A, D}}, // CBAD CBAD
-	{[4]uint{C, B, D, A}, [4]uint{D, B, A, C}}, // CBDA DBAC
-	{[4]uint{C, D, A, B}, [4]uint{C, D, A, B}}, // CDAB CDAB
-	{[4]uint{C, D, B, A}, [4]uint{D, C, A, B}}, // CDBA DCAB
-	{[4]uint{D, A, B, C}, [4]uint{B, C, D, A}}, // DABC BCDA
-	{[4]uint{D, A, C, B}, [4]uint{B, D, C, A}}, // DACB BDCA
-	{[4]uint{D, B, A, C}, [4]uint{C, B, D, A}}, // DBAC CBDA
-	{[4]uint{D, B, C, A}, [4]uint{D, B, C, A}}, // DBCA DBCA
-	{[4]uint{D, C, A, B}, [4]uint{C, D, B, A}}, // DCAB CDBA
-	{[4]uint{D, C, B, A}, [4]uint{D, C, B, A}}, // DCBA DCBA
-}
-
 func GetPartyPokemon(ciphertext []byte) []Pokemon {
 	var party []Pokemon
 
@@ -89,20 +55,12 @@ func GetPartyPokemon(ciphertext []byte) []Pokemon {
 	return party
 }
 
-// block is one of 0, 1, 2, 3
-func (bo blockOrder) getUnshuffledPos(block uint) uint {
-	metadataOffset := uint(0x8)
-	startIndex := bo.OriginalPos[block]
-	res := metadataOffset + (startIndex * BLOCK_SIZE_BYTES)
-	return res
-}
-
 func getPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error) {
 	if block >= A && block <= D {
 		shiftValue := ((personality & 0x03E000) >> 0x0D) % 24
-		unshuffleInfo := unshuffleTable[shiftValue]
-		startAddr := unshuffleInfo.getUnshuffledPos(block)
-		blockChunk := buf[startAddr : startAddr+BLOCK_SIZE_BYTES]
+		unshuffleInfo := shuffler.Get(shiftValue)
+		startAddr := unshuffleInfo.GetUnshuffledPos(block)
+		blockChunk := buf[startAddr : startAddr+consts.BLOCK_SIZE_BYTES]
 
 		return blockChunk, nil
 	}
@@ -111,7 +69,7 @@ func getPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error)
 }
 
 func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
-	offset := partyIndex * PARTY_POKEMON_SIZE
+	offset := partyIndex * consts.PARTY_POKEMON_SIZE
 	plaintext := crypt.DecryptPokemon(ciphertext[offset:])
 	personality := binary.LittleEndian.Uint32(plaintext[0:4])
 
@@ -177,12 +135,12 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	battleStats := BattleStat{
 		uint(battleStatsPlaintext[4]),
 		Stats{
-			uint(binary.LittleEndian.Uint16(plaintext[0x8:0xA])),
-			uint(binary.LittleEndian.Uint16(plaintext[0xA:0xC])),
-			uint(binary.LittleEndian.Uint16(plaintext[0xC:0xE])),
-			uint(binary.LittleEndian.Uint16(plaintext[0x10:0x12])),
-			uint(binary.LittleEndian.Uint16(plaintext[0x12:0x14])),
-			uint(binary.LittleEndian.Uint16(plaintext[0xE:0x10])),
+			uint(binary.LittleEndian.Uint16(battleStatsPlaintext[0x8:0xA])),
+			uint(binary.LittleEndian.Uint16(battleStatsPlaintext[0xA:0xC])),
+			uint(binary.LittleEndian.Uint16(battleStatsPlaintext[0xC:0xE])),
+			uint(binary.LittleEndian.Uint16(battleStatsPlaintext[0x10:0x12])),
+			uint(binary.LittleEndian.Uint16(battleStatsPlaintext[0x12:0x14])),
+			uint(binary.LittleEndian.Uint16(battleStatsPlaintext[0xE:0x10])),
 		},
 	}
 
