@@ -12,7 +12,6 @@ import (
 )
 
 /*
-
 tasks required at a high level:
 1. overwrite (decrypted) savefile with desired changes
 2. encrypt the block data
@@ -30,13 +29,11 @@ Since decryption will be needed for both reads/writes, it would be good
 to pull out the encryption/decryption functionality into its own separate sub-package
 -> this reduces coupling
 
-Once decryption is decoupled, use this subpackage to decrypt the contents before writing changes
+# Once decryption is decoupled, use this subpackage to decrypt the contents before writing changes
 
 once changes have been written, encrypt the chunk again and validate the ciphertext with the footer
 - would I have to overwrite the contents in the footer as well, since the ciphertext
 (and thereby the checksum) changes? <-- PROBABLY YES
-
-
 */
 type Writable interface {
 	Bytes() ([]byte, error)
@@ -44,12 +41,12 @@ type Writable interface {
 
 // for battle stats
 type WriteStats struct {
-	Hp uint
-	Attack uint
-	Defense uint
-	SpAttack uint
+	Hp        uint
+	Attack    uint
+	Defense   uint
+	SpAttack  uint
 	SpDefense uint
-	Speed uint
+	Speed     uint
 }
 
 // for IDs/level/IVs/EVs
@@ -63,11 +60,12 @@ type WriteString struct {
 }
 
 func (ws WriteStats) Bytes() ([]byte, error) {
-	res := make([]byte, 12)
-	stats := [6]uint{ ws.Hp, ws.Attack, ws.Defense, ws.Speed, ws.SpAttack, ws.SpDefense }
+	res := make([]byte, 0)
+	stats := [6]uint{ws.Hp, ws.Attack, ws.Defense, ws.Speed, ws.SpAttack, ws.SpDefense}
 
 	for _, v := range stats {
 		// little endian (least significant byte first)
+		fmt.Printf("UM: %d (0x%x)\n", v, v)
 		little := byte(v & 0xFF)
 		big := byte((v >> 8) & 0xFF)
 		res = append(res, little, big)
@@ -79,8 +77,8 @@ func (ws WriteStats) Bytes() ([]byte, error) {
 func (wu WriteUint) Bytes() ([]byte, error) {
 	res := make([]byte, 0)
 
-	for wu.Val != 0 {	
-		res = append(res, byte(wu.Val & 0xFF))
+	for wu.Val != 0 {
+		res = append(res, byte(wu.Val&0xFF))
 		wu.Val >>= 8
 	}
 
@@ -118,12 +116,12 @@ func (ws WriteString) Bytes() ([]byte, error) {
 }
 
 const (
-	ITEM = "ITEM"					// value will be item ID
-	ABILITY = "ABILITY"				// value will be ability ID
-	EV = "EV"						// value will be 
-	IV = "IV"
-	NICKNAME = "NICKNAME"
-	LEVEL = "LEVEL"
+	ITEM         = "ITEM"    // value will be item ID
+	ABILITY      = "ABILITY" // value will be ability ID
+	EV           = "EV"      // value will be
+	IV           = "IV"
+	NICKNAME     = "NICKNAME"
+	LEVEL        = "LEVEL"
 	BATTLE_STATS = "BATTLE_STATS"
 )
 
@@ -131,7 +129,46 @@ type NewData map[string]Writable
 
 type WriteRequests struct {
 	PartyIndex uint
-	Contents NewData
+	Contents   NewData
+}
+
+type WriteRequestBuilder struct {
+	WriteRequests
+}
+
+func NewWriteRequest(partyIndex uint) WriteRequests {
+	return WriteRequests{
+		partyIndex,
+		make(NewData),
+	}
+}
+
+func (wr WriteRequests) WriteItem(itemId uint) {
+	wr.Contents[ITEM] = WriteUint{itemId}
+}
+
+func (wr WriteRequests) WriteAbility(abilityId uint) {
+	wr.Contents[ABILITY] = WriteUint{abilityId}
+}
+
+func (wr WriteRequests) WriteEV(value uint) {
+	wr.Contents[EV] = WriteUint{value}
+}
+
+func (wr WriteRequests) WriteIV(value uint) {
+	wr.Contents[IV] = WriteUint{value}
+}
+
+func (wr WriteRequests) WriteNickname(name string) {
+	wr.Contents[NICKNAME] = WriteString{name}
+}
+
+func (wr WriteRequests) WriteLevel(level uint) {
+	wr.Contents[LEVEL] = WriteUint{level}
+}
+
+func (wr WriteRequests) WriteBattleStats(hp, atk, def, spa, spd, spe uint) {
+	wr.Contents[BATTLE_STATS] = WriteStats{hp, atk, def, spa, spd, spe}
 }
 
 type AbsAddress uint
@@ -155,10 +192,10 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 		}
 		fmt.Printf("%s: % x\n", req, bytes)
 
-		offset := base + newData.PartyIndex * consts.PARTY_POKEMON_SIZE
+		offset := base + newData.PartyIndex*consts.PARTY_POKEMON_SIZE
 		personality := binary.LittleEndian.Uint32(savefile[offset : offset+4])
 
-		fmt.Printf("% x\n", savefile[offset:offset+36])
+		// fmt.Printf("% x\n", savefile[offset:offset+36])
 
 		var dataOffset int
 		var blockIndex int
@@ -188,13 +225,10 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 
 		var addr AbsAddress
 
-		decrypted := crypt.DecryptPokemon(savefile[offset:])
-		fmt.Printf("% x\n", decrypted)
-
 		if blockIndex != -1 {
 			blockAddress, err := shuffler.GetPokemonBlockLocation(uint(blockIndex), personality)
 			if err != nil {
-				return []byte{}, nil
+				return []byte{}, err
 			}
 
 			addr = AbsAddress(offset + blockAddress + uint(dataOffset))
@@ -226,18 +260,24 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 			}
 		}
 
+		fmt.Printf(
+			"uipdates! (len=%d): % x\n", 
+			len(changes[newData.PartyIndex].Updates), 
+			changes[newData.PartyIndex].Updates,
+		)
+
 		// fmt.Printf("Before: % x\n", savefile[addr : addr+20])
 		// copy(savefile[addr:], bytes)
 		// fmt.Printf("After:  % x\n", savefile[addr : addr+20])
 		// fmt.Print("-------\n\n")
-		
+
 		if _, seen := updatedPokemonIndexes[newData.PartyIndex]; !seen {
 			updatedPokemonIndexes[newData.PartyIndex] = true
 		}
 	}
 
 	for i := range updatedPokemonIndexes {
-		pokemonOffset := base + i * consts.PARTY_POKEMON_SIZE
+		pokemonOffset := base + i*consts.PARTY_POKEMON_SIZE
 		fmt.Printf("changes for partyPokemon[%d]: % x\n", i, changes[i].Updates)
 		encrypted := crypt.EncryptPokemon(changes[i].Updates)
 
@@ -246,11 +286,11 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData WriteReq
 
 	start := chunk.SmallBlock.Address
 	end := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
-	newChecksum := crypt.CRC16_CCITT(savefile[start : end])
+	newChecksum := crypt.CRC16_CCITT(savefile[start:end])
 
-	fmt.Printf("Before (checksum): % x\n", savefile[end : end+20])
-	binary.LittleEndian.PutUint16(savefile[end + 18:], newChecksum)
-	fmt.Printf("After (checksum):  % x\n", savefile[end : end+20])
+	fmt.Printf("Before (checksum): % x\n", savefile[end:end+20])
+	binary.LittleEndian.PutUint16(savefile[end+18:], newChecksum)
+	fmt.Printf("After (checksum):  % x\n", savefile[end:end+20])
 	fmt.Print("-------\n\n")
 
 	return savefile, nil
