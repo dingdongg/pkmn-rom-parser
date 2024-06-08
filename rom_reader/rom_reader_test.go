@@ -65,8 +65,7 @@ func TestParsePokemon(t *testing.T) {
 }
 
 func TestParseUpdatedPokemon(t *testing.T) {
-	// file takes care of the personality offset
-	savefile, err := os.ReadFile("./../savefiles/new.sav")
+	savefile, err := os.ReadFile("./mocks/new.sav")
 	if err != nil {
 		t.Fatal("Unexpected error ", err)
 	}
