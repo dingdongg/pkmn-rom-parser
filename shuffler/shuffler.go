@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
 )
 
 // from https://projectpokemon.org/home/docs/gen-4/pkm-structure-r65/
@@ -89,20 +89,20 @@ func GetPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error)
 
 // Used to get the absolute memory address location of the block. Mainly for writing purposes ATM
 func GetPokemonBlockLocation(block uint, personality uint32) (uint, error) {
-	if block  >= A && block <= D {
+	if block >= A && block <= D {
 		shiftValue := ((personality & 0x03E000) >> 0x0D) % 24
 		unshuffleInfo := unshuffleTable[shiftValue]
 		startAddr := unshuffleInfo.GetUnshuffledPos(block)
-		
+
 		return startAddr, nil
 	}
 	return 0, errors.New("invalid block index")
 }
 
-/* 
-	block is one of 0, 1, 2, 3
+/*
+block is one of 0, 1, 2, 3
 
-	metadata consists of a pokemon's PID & checksum 
+metadata consists of a pokemon's PID & checksum
 */
 func (bo blockOrder) GetUnshuffledPos(block uint) uint {
 	metadataOffset := uint(0x8)

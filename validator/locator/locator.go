@@ -1,6 +1,6 @@
 package locator
 
-import "github.com/dingdongg/pkmn-rom-parser/v3/validator"
+import "github.com/dingdongg/pkmn-rom-parser/v4/validator"
 
 // return address to the start of the latest save chunk
 // REQUIREMENT: savefile must be the entire .SAV file
@@ -24,6 +24,6 @@ func GetLatestSaveChunk(savefile []byte) *validator.Chunk {
 
 	return &validator.Chunk{
 		SmallBlock: latestSmallBlock,
-		BigBlock: latestBigBlock,
+		BigBlock:   latestBigBlock,
 	}
 }

@@ -1,12 +1,12 @@
 package parser
 
 import (
-	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v3/rom_reader"
-	"github.com/dingdongg/pkmn-rom-parser/v3/rom_writer"
-	"github.com/dingdongg/pkmn-rom-parser/v3/rom_writer/req"
-	"github.com/dingdongg/pkmn-rom-parser/v3/validator"
-	"github.com/dingdongg/pkmn-rom-parser/v3/validator/locator"
+	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v4/rom_reader"
+	"github.com/dingdongg/pkmn-rom-parser/v4/rom_writer"
+	"github.com/dingdongg/pkmn-rom-parser/v4/rom_writer/req"
+	"github.com/dingdongg/pkmn-rom-parser/v4/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v4/validator/locator"
 )
 
 func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {

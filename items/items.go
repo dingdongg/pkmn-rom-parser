@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/path_resolver"
+	"github.com/dingdongg/pkmn-rom-parser/v4/path_resolver"
 )
 
 // fetch item names and cache in RAM to prevent multiple file IO operations

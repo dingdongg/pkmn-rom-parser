@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/prng"
+	"github.com/dingdongg/pkmn-rom-parser/v4/prng"
 )
 
 // Computes a checksum via the CRC16-CCITT algorithm on the given data
@@ -12,7 +12,7 @@ func CRC16_CCITT(data []byte) uint16 {
 	sum := uint(0xFFFF)
 
 	for _, b := range data {
-		sum = (sum << 8) ^ seeds[b ^ byte((sum >> 8))]
+		sum = (sum << 8) ^ seeds[b^byte((sum>>8))]
 	}
 
 	return uint16(sum)
@@ -20,10 +20,10 @@ func CRC16_CCITT(data []byte) uint16 {
 
 // Encrypts the given pokemon. Checksum will be updated as part of encryption
 func EncryptPokemon(plaintext []byte) []byte {
-	personality := binary.LittleEndian.Uint32(plaintext[0 : 4])
+	personality := binary.LittleEndian.Uint32(plaintext[0:4])
 	// do i use the previous checksum? or the new plaintextSum calculated below?
 	// UPDATE: I think im supposed to use the new checksum
-	// checksum := binary.LittleEndian.Uint16(plaintext[6 : 8]) 
+	// checksum := binary.LittleEndian.Uint16(plaintext[6 : 8])
 
 	buffer := make([]byte, 8)
 	copy(buffer, plaintext[:8])
@@ -62,8 +62,8 @@ func EncryptBattleStats(plaintext []byte, personality uint32) []byte {
 }
 
 func DecryptPokemon(ciphertext []byte) []byte {
-	personality := binary.LittleEndian.Uint32(ciphertext[0 : 4])
-	checksum := binary.LittleEndian.Uint16(ciphertext[6 : 8])
+	personality := binary.LittleEndian.Uint32(ciphertext[0:4])
+	checksum := binary.LittleEndian.Uint16(ciphertext[6:8])
 
 	rand := prng.Init(checksum, personality)
 

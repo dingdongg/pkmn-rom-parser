@@ -3,11 +3,11 @@ package rom_writer
 import (
 	"encoding/binary"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
-	"github.com/dingdongg/pkmn-rom-parser/v3/rom_writer/req"
-	"github.com/dingdongg/pkmn-rom-parser/v3/shuffler"
-	"github.com/dingdongg/pkmn-rom-parser/v3/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v4/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v4/rom_writer/req"
+	"github.com/dingdongg/pkmn-rom-parser/v4/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v4/validator"
 )
 
 /*
@@ -70,10 +70,10 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []req.Wr
 					return []byte{}, err
 				}
 			}
-			
+
 			if _, ok := changes[wr.PartyIndex]; !ok {
-				changes[wr.PartyIndex] = crypt.DecryptPokemon(savefile[offset:]) 
-			} 
+				changes[wr.PartyIndex] = crypt.DecryptPokemon(savefile[offset:])
+			}
 			copy(changes[wr.PartyIndex][blockAddress+uint(dataOffset):], bytes)
 
 			if _, seen := updatedPokemonIndexes[wr.PartyIndex]; !seen {

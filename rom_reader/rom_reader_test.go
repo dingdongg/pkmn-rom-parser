@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
 	"github.com/google/go-cmp/cmp"
 )
 

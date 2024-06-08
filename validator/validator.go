@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v4/crypt"
 )
 
 /*
@@ -23,22 +23,22 @@ POKEMON PLATINUM
 // a "chunk" denotes a pair of small + big block that are adjacent in memory
 type Chunk struct {
 	SmallBlock Block
-	BigBlock Block
+	BigBlock   Block
 }
 
 type Block struct {
 	BlockData []byte
-	Footer Footer
-	Address uint
+	Footer    Footer
+	Address   uint
 }
 
 type Footer struct {
 	Identifier uint32
-	SaveNumber	uint32
-	BlockSize uint32
-	K	uint32
-	T  uint16
-	Checksum uint16
+	SaveNumber uint32
+	BlockSize  uint32
+	K          uint32
+	T          uint16
+	Checksum   uint16
 }
 
 const savefileSize int = 1 << 19
@@ -48,11 +48,11 @@ const secondChunkOffset uint = 0x40000
 func getFooter(buf []byte) Footer {
 	return Footer{
 		binary.LittleEndian.Uint32(buf[:0x4]),
-		binary.LittleEndian.Uint32(buf[0x4 : 0x8]),
-		binary.LittleEndian.Uint32(buf[0x8 : 0xC]),
-		binary.LittleEndian.Uint32(buf[0xC : 0x10]),
-		binary.LittleEndian.Uint16(buf[0x10 : 0x12]),
-		binary.LittleEndian.Uint16(buf[0x12 : 0x14]),
+		binary.LittleEndian.Uint32(buf[0x4:0x8]),
+		binary.LittleEndian.Uint32(buf[0x8:0xC]),
+		binary.LittleEndian.Uint32(buf[0xC:0x10]),
+		binary.LittleEndian.Uint16(buf[0x10:0x12]),
+		binary.LittleEndian.Uint16(buf[0x12:0x14]),
 	}
 }
 
@@ -85,18 +85,18 @@ func GetChunk(savefile []byte, offset uint) Chunk {
 	bigBlockStart := uint(0xCF2C) + offset
 
 	smallBlock := Block{
-		savefile[offset : smallBlockFooterAddr],	
+		savefile[offset:smallBlockFooterAddr],
 		getFooter(savefile[smallBlockFooterAddr : smallBlockFooterAddr+footerSize]),
 		offset,
 	}
 
 	bigBlock := Block{
-		savefile[bigBlockStart : bigBlockFooterAddr],
+		savefile[bigBlockStart:bigBlockFooterAddr],
 		getFooter(savefile[bigBlockFooterAddr : bigBlockFooterAddr+footerSize]),
 		bigBlockStart,
 	}
 
-	return Chunk{ smallBlock, bigBlock }
+	return Chunk{smallBlock, bigBlock}
 }
 
 // validates the given .sav file
