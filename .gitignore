@@ -4,3 +4,6 @@ pkmn-rom-parser
 .DS_Store
 
 dev/*
+
+main 
+results*
