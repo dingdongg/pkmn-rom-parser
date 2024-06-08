@@ -2,12 +2,21 @@
 Application used to parse in-game information in generation IV/V Pokemon games.
 
 ## Currently supported games
-- Pokemon Platinum only
+- Pokemon Platinum only (support for other games will be implemented in future releases)
+
+## Features
+- Read/update party pokemon stats, including:
+    - level
+    - name
+    - EVs/IVs
+    - held item
+    - nature
+    - battle stats
+- checksum validations, safe from memory corruptions!
 
 ## TODO
 - extend support for other gen. 4/5 games
-- read from the more recent savefile chunk, instead of whatever is stored in the first small block in memory
-- ROM writer package?
+- Read/update PC system pokemon too
 
 ### Credits
 ---
