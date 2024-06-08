@@ -2,7 +2,6 @@ package rom_reader
 
 import (
 	"encoding/binary"
-	"fmt"
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v3/char"
@@ -58,14 +57,11 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	offset := partyIndex * consts.PARTY_POKEMON_SIZE
 	plaintext := crypt.DecryptPokemon(ciphertext[offset:])
 	personality := binary.LittleEndian.Uint32(plaintext[0:4])
-	fmt.Println("decrypted")
 
 	blockA, err := shuffler.GetPokemonBlock(plaintext, A, personality)
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block A: ", err)
 	}
-
-	fmt.Printf("BLOCK A:\n => % x\n", blockA)
 
 	blockB, err := shuffler.GetPokemonBlock(plaintext, B, personality)
 	if err != nil {
@@ -76,8 +72,6 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	if err != nil {
 		log.Fatal("Unexpected error while parsing block C: ", err)
 	}
-
-	fmt.Println("we made it")
 
 	ivBytes := binary.LittleEndian.Uint32(blockB[0x10:0x14])
 
@@ -120,9 +114,7 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 		name += str
 	}
 
-	fmt.Printf("Pokemon: '%s'\n", name)
-
-	battleStatsPlaintext := crypt.DecryptBattleStats(ciphertext[offset+0x88:], personality)
+	battleStatsPlaintext := plaintext[0x88:]
 	battleStats := BattleStat{
 		uint(battleStatsPlaintext[4]),
 		Stats{
@@ -142,19 +134,17 @@ func parsePokemon(ciphertext []byte, partyIndex uint) Pokemon {
 	specialAtkEVOffset := 0x14
 	specialDefEVOffset := 0x15
 
-	fmt.Printf(
-		"Stats:\n\t- HP:  %d\n\t- ATK: %d\n\t- DEF: %d\n\t- SpA: %d\n\t- SpD: %d\n\t- SPE: %d\n",
-		blockA[hpEVOffset], blockA[attackEVOffset],
-		blockA[defenseEVOffset], blockA[specialAtkEVOffset],
-		blockA[specialDefEVOffset], blockA[speedEVOffset],
-	)
+	// fmt.Printf(
+	// 	"Stats:\n\t- HP:  %d\n\t- ATK: %d\n\t- DEF: %d\n\t- SpA: %d\n\t- SpD: %d\n\t- SPE: %d\n",
+	// 	blockA[hpEVOffset], blockA[attackEVOffset],
+	// 	blockA[defenseEVOffset], blockA[specialAtkEVOffset],
+	// 	blockA[specialDefEVOffset], blockA[speedEVOffset],
+	// )
 
 	evSum := 0
 	for i := 0; i < 6; i++ {
 		evSum += int(blockA[hpEVOffset+i])
 	}
-
-	// fmt.Printf("Total EV Spenditure: %d / 510\n", evSum)
 
 	return Pokemon{
 		dexId,

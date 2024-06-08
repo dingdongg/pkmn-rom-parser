@@ -2,7 +2,6 @@ package rom_writer
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v3/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v3/crypt"
@@ -85,7 +84,6 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []req.Wr
 
 	for i := range updatedPokemonIndexes {
 		pokemonOffset := base + i*consts.PARTY_POKEMON_SIZE
-		fmt.Printf("changes for partyPokemon[%d]: % x\n", i, changes[i])
 		encrypted := crypt.EncryptPokemon(changes[i])
 
 		copy(savefile[AbsAddress(pokemonOffset):], encrypted)
@@ -100,8 +98,5 @@ func updateBlockChecksum(savefile []byte, chunk validator.Chunk) {
 	end := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
 	newChecksum := crypt.CRC16_CCITT(savefile[start:end])
 
-	fmt.Printf("Before (checksum): % x\n", savefile[end:end+20])
 	binary.LittleEndian.PutUint16(savefile[end+18:], newChecksum)
-	fmt.Printf("After (checksum):  % x\n", savefile[end:end+20])
-	fmt.Print("-------\n\n")
 }
