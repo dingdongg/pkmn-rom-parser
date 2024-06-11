@@ -1,6 +1,9 @@
 package char
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 const END_OF_STRING uint16 = 0xFFFF
 const NULL_CHAR uint16 = 0x0
@@ -31,5 +34,5 @@ func Index(char string) (uint16, error) {
 		return index, nil
 	}
 
-	return 0, errors.New("nonexistent character")
+	return 0, fmt.Errorf("nonexistent character '%s'", char)
 }

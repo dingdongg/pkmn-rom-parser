@@ -110,7 +110,6 @@ func (wu WriteUint) Bytes() ([]byte, error) {
 }
 
 func (ws WriteString) Bytes() ([]byte, error) {
-	// TODO: may have to limit the max length of the incoming string
 	res := make([]byte, 0)
 
 	min := func(a int, b int) int {
@@ -120,11 +119,11 @@ func (ws WriteString) Bytes() ([]byte, error) {
 		return b
 	}
 
-	end := min(len(ws.Val), 11)
+	// gen. 4 NDS games allow up to 10 characters max (so 11 with null terminator)
+	prunedString := ws.Val[:min(len(ws.Val), 11)]
 
-	for i := 0; i < end; i++ {
-		c := ws.Val[i]
-		index, err := char.Index(string(c))
+	for _, r := range prunedString {
+		index, err := char.Index(string(r))
 		if err != nil {
 			return []byte{}, err
 		}
