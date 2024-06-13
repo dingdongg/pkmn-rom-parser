@@ -44,6 +44,14 @@ type WriteString struct {
 
 type NewData map[string]Writable
 
+// types that implement CompressibleStat can have their stat values
+// compressed into an unsigned integer. For instance, 
+// each IV stat uses 5 bits (=30) - so IVs can be packed in a uint32.
+// each EV stat uses 8 bits (=48) - so EVs can be packed in a uint64.
+type CompressibleStat interface {
+	Compress(elemBits uint) uint
+}
+
 type WriteRequest struct {
 	PartyIndex uint
 	Contents   NewData
@@ -64,12 +72,12 @@ func (wr WriteRequest) WriteAbility(abilityId uint) {
 	wr.Contents[ABILITY] = WriteUint{abilityId}
 }
 
-func (wr WriteRequest) WriteEV(value uint) {
-	wr.Contents[EV] = WriteUint{value}
+func (wr WriteRequest) WriteEV(value CompressibleStat) {
+	wr.Contents[EV] = WriteUint{value.Compress(8)}
 }
 
-func (wr WriteRequest) WriteIV(value uint) {
-	wr.Contents[IV] = WriteUint{value}
+func (wr WriteRequest) WriteIV(value CompressibleStat) {
+	wr.Contents[IV] = WriteUint{value.Compress(5)}
 }
 
 func (wr WriteRequest) WriteNickname(name string) {
