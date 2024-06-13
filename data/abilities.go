@@ -178,3 +178,13 @@ func GetAbility(index uint) (string, error) {
 
 	return abilityTable[index], nil
 }
+
+func GenerateAbilityMap() map[string]uint {
+	m := make(map[string]uint, 0)
+
+	for i, a := range abilityTable {
+		m[a] = uint(i)
+	}
+
+	return m
+}

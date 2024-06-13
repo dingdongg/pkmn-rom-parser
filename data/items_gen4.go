@@ -1,7 +1,6 @@
 package data
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -551,10 +550,28 @@ var itemsTable [538]itemInfo = [538]itemInfo{
 	{"Enigma Stone", "HGSS"},
 }
 
+type mapValue struct {
+	Index uint
+	Exclusivity string
+}
+
 func GetItem(index uint16) (itemInfo, error) {
 	if index >= uint16(len(itemsTable)) {
-		return itemInfo{}, errors.New(fmt.Sprintf("invalid index: %d\n", index))
+		return itemInfo{}, fmt.Errorf("invalid index: %d", index)
 	}
 
 	return itemsTable[index], nil
+}
+
+func GenerateItemMap() map[string]mapValue {
+	m := make(map[string]mapValue, 0)
+
+	for i, v := range itemsTable {
+		m[v.Name] = mapValue{
+			uint(i),
+			v.Exclusivity,
+		}
+	}
+	
+	return m
 }
