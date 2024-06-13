@@ -2,6 +2,7 @@ package rom_writer
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v4/crypt"
@@ -41,6 +42,33 @@ type StagingBuffer []byte
 
 // maps a party pokemon index to the updated pokemon data structure
 type StagingMap map[uint]StagingBuffer
+
+type WriteRequestBuffer []req.WriteRequest
+
+type WriteRequestBuilder struct {
+	Buffer []req.WriteRequest
+}
+
+func NewRequestBuilder() *WriteRequestBuilder {
+	return &WriteRequestBuilder{
+		make([]req.WriteRequest, 0),
+	}
+}
+
+// A new request is added to the internal requests buffer, provided there is enough space
+func (wrb *WriteRequestBuilder) AddRequest(partyIndex uint) (req.WriteRequest, error) {
+	if partyIndex >= 6 {
+		return req.WriteRequest{}, fmt.Errorf("invalid party index %d", partyIndex)
+	}
+
+	if len(wrb.Buffer) == 6 {
+		return req.WriteRequest{}, fmt.Errorf("buffer is full: 6 pokemon requests")
+	}
+
+	request := req.NewWriteRequest(partyIndex)
+	wrb.Buffer = append(wrb.Buffer, request)
+	return request, nil
+}
 
 func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []req.WriteRequest) ([]byte, error) {
 	updatedPokemonIndexes := make(map[uint]bool, 0)
