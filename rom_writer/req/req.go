@@ -2,9 +2,11 @@ package req
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v4/char"
 	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v4/data"
 	"github.com/dingdongg/pkmn-rom-parser/v4/shuffler"
 )
 
@@ -64,11 +66,21 @@ func NewWriteRequest(partyIndex uint) WriteRequest {
 	}
 }
 
-func (wr WriteRequest) WriteItem(itemId uint) {
-	wr.Contents[ITEM] = WriteUint{itemId}
+func (wr WriteRequest) WriteItem(itemName string) {
+	itemMap := data.GenerateItemMap()
+	item, ok := itemMap[itemName]
+	if !ok {
+		log.Fatalf("failed to write item '%s'; doesn't exist\n", itemName)
+	}
+	wr.Contents[ITEM] = WriteUint{item.Index}
 }
 
-func (wr WriteRequest) WriteAbility(abilityId uint) {
+func (wr WriteRequest) WriteAbility(ability string) {
+	abilityMap := data.GenerateAbilityMap()
+	abilityId, ok := abilityMap[ability]
+	if !ok {
+		log.Fatalf("failed to write ability '%s'; doesn't exist\n", ability)
+	}
 	wr.Contents[ABILITY] = WriteUint{abilityId}
 }
 
@@ -88,6 +100,8 @@ func (wr WriteRequest) WriteLevel(level uint) {
 	wr.Contents[LEVEL] = WriteUint{level}
 }
 
+// TODO improve signature. since golang doesn't does support struct spreading like JS, it's
+// clunky to use like this
 func (wr WriteRequest) WriteBattleStats(hp, atk, def, spa, spd, spe uint) {
 	wr.Contents[BATTLE_STATS] = WriteStats{hp, atk, def, spa, spd, spe}
 }
