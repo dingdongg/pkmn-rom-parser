@@ -4,11 +4,11 @@ import (
 	"encoding/binary"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v4/char"
-	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v4/crypt"
-	"github.com/dingdongg/pkmn-rom-parser/v4/data"
-	"github.com/dingdongg/pkmn-rom-parser/v4/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v5/char"
+	"github.com/dingdongg/pkmn-rom-parser/v5/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v5/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v5/data"
+	"github.com/dingdongg/pkmn-rom-parser/v5/shuffler"
 )
 
 type Stats struct {

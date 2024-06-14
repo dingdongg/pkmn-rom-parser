@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v4/char"
-	"github.com/dingdongg/pkmn-rom-parser/v4/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v4/data"
-	"github.com/dingdongg/pkmn-rom-parser/v4/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v5/char"
+	"github.com/dingdongg/pkmn-rom-parser/v5/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v5/data"
+	"github.com/dingdongg/pkmn-rom-parser/v5/shuffler"
 )
 
 const (
@@ -47,7 +47,7 @@ type WriteString struct {
 type NewData map[string]Writable
 
 // types that implement CompressibleStat can have their stat values
-// compressed into an unsigned integer. For instance, 
+// compressed into an unsigned integer. For instance,
 // each IV stat uses 5 bits (=30) - so IVs can be packed in a uint32.
 // each EV stat uses 8 bits (=48) - so EVs can be packed in a uint64.
 type CompressibleStat interface {

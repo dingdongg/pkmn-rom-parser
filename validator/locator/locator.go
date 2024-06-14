@@ -1,6 +1,6 @@
 package locator
 
-import "github.com/dingdongg/pkmn-rom-parser/v4/validator"
+import "github.com/dingdongg/pkmn-rom-parser/v5/validator"
 
 // return address to the start of the latest save chunk
 // REQUIREMENT: savefile must be the entire .SAV file
