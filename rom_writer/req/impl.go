@@ -100,11 +100,11 @@ func (wu WriteUint) Bytes() ([]byte, error) {
 	if wu.NumBytes == 1 {
 		res = append(res, byte(wu.Val))
 	} else if wu.NumBytes == 2 {
-		binary.LittleEndian.AppendUint16(res, uint16(wu.Val))
+		res = binary.LittleEndian.AppendUint16(res, uint16(wu.Val))
 	} else if wu.NumBytes == 4 {
-		binary.LittleEndian.AppendUint32(res, uint32(wu.Val))
+		res = binary.LittleEndian.AppendUint32(res, uint32(wu.Val))
 	} else if wu.NumBytes == 8 {
-		binary.LittleEndian.AppendUint64(res, uint64(wu.Val))
+		res = binary.LittleEndian.AppendUint64(res, uint64(wu.Val))
 	} else {
 		return res, fmt.Errorf("too many bytes")
 	}
