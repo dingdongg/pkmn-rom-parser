@@ -2,11 +2,8 @@ package req
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/char"
 	"github.com/dingdongg/pkmn-rom-parser/v5/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v5/data"
 	"github.com/dingdongg/pkmn-rom-parser/v5/shuffler"
 )
 
@@ -20,149 +17,11 @@ const (
 	BATTLE_STATS = "BATTLE_STATS"
 )
 
-type Writable interface {
-	Bytes() ([]byte, error)
-}
-
-// for battle stats
-type WriteStats struct {
-	Hp        uint
-	Attack    uint
-	Defense   uint
-	SpAttack  uint
-	SpDefense uint
-	Speed     uint
-}
-
-// for IDs/level/IVs/EVs
-type WriteUint struct {
-	Val uint
-}
-
-// for nicknames
-type WriteString struct {
-	Val string
-}
-
-type NewData map[string]Writable
-
-// types that implement CompressibleStat can have their stat values
-// compressed into an unsigned integer. For instance,
-// each IV stat uses 5 bits (=30) - so IVs can be packed in a uint32.
-// each EV stat uses 8 bits (=48) - so EVs can be packed in a uint64.
-type CompressibleStat interface {
-	Compress(elemBits uint) uint
-}
-
-type WriteRequest struct {
-	PartyIndex uint
-	Contents   NewData
-}
-
 func NewWriteRequest(partyIndex uint) WriteRequest {
 	return WriteRequest{
 		partyIndex,
 		make(NewData),
 	}
-}
-
-func (wr WriteRequest) WriteItem(itemName string) {
-	itemMap := data.GenerateItemMap()
-	item, ok := itemMap[itemName]
-	if !ok {
-		log.Fatalf("failed to write item '%s'; doesn't exist\n", itemName)
-	}
-	wr.Contents[ITEM] = WriteUint{item.Index}
-}
-
-func (wr WriteRequest) WriteAbility(ability string) {
-	abilityMap := data.GenerateAbilityMap()
-	abilityId, ok := abilityMap[ability]
-	if !ok {
-		log.Fatalf("failed to write ability '%s'; doesn't exist\n", ability)
-	}
-	wr.Contents[ABILITY] = WriteUint{abilityId}
-}
-
-func (wr WriteRequest) WriteEV(value CompressibleStat) {
-	wr.Contents[EV] = WriteUint{value.Compress(8)}
-}
-
-func (wr WriteRequest) WriteIV(value CompressibleStat) {
-	wr.Contents[IV] = WriteUint{value.Compress(5)}
-}
-
-func (wr WriteRequest) WriteNickname(name string) {
-	wr.Contents[NICKNAME] = WriteString{name}
-}
-
-func (wr WriteRequest) WriteLevel(level uint) {
-	wr.Contents[LEVEL] = WriteUint{level}
-}
-
-// TODO improve signature. since golang doesn't does support struct spreading like JS, it's
-// clunky to use like this
-func (wr WriteRequest) WriteBattleStats(hp, atk, def, spa, spd, spe uint) {
-	wr.Contents[BATTLE_STATS] = WriteStats{hp, atk, def, spa, spd, spe}
-}
-
-func (ws WriteStats) Bytes() ([]byte, error) {
-	res := make([]byte, 0)
-	stats := [6]uint{ws.Hp, ws.Attack, ws.Defense, ws.Speed, ws.SpAttack, ws.SpDefense}
-
-	for _, v := range stats {
-		// little endian (least significant byte first)
-		little := byte(v & 0xFF)
-		big := byte((v >> 8) & 0xFF)
-		res = append(res, little, big)
-	}
-
-	return res, nil
-}
-
-func (wu WriteUint) Bytes() ([]byte, error) {
-	res := make([]byte, 0)
-
-	for wu.Val != 0 {
-		res = append(res, byte(wu.Val&0xFF))
-		wu.Val >>= 8
-	}
-
-	return res, nil
-}
-
-func (ws WriteString) Bytes() ([]byte, error) {
-	res := make([]byte, 0)
-
-	min := func(a int, b int) int {
-		if a < b {
-			return a
-		}
-		return b
-	}
-
-	// gen. 4 NDS games allow up to 10 characters max (so 11 with null terminator)
-	prunedString := ws.Val[:min(len(ws.Val), 11)]
-
-	for _, r := range prunedString {
-		index, err := char.Index(string(r))
-		if err != nil {
-			return []byte{}, err
-		}
-
-		little := byte(index & 0xFF)
-		big := byte((index >> 8) & 0xFF)
-		res = append(res, little, big)
-	}
-
-	res = append(res, 0xFF, 0xFF)
-
-	// need to fill the (22 - len(res)) elements with 0s
-	for len(res) != 22 {
-		res = append(res, 0x0)
-	}
-
-	return res, nil
 }
 
 // blockIndex will be -1 if the request is invalid, or is a level/battle stat request
