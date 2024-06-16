@@ -1,33 +1,43 @@
 package tutil
 
-// useful test helper functions for logging
+// useful test logging templates 
 
-import (
-	"testing"
-)
-
-func ErrMsg(t *testing.T, message string) {
-	t.Fatal(message)
+type templates struct {
+	Uint string
+	UintHex string
+	Int string
+	IntHex string
+	String string
 }
 
-func ErrUint(t *testing.T, expected uint, actual uint, inHex bool) {
+func GetTemplates() templates {
+	return templates{
+		FatalfUint(false),
+		FatalfUint(true),
+		FatalfInt(false),
+		FatalfInt(true),
+		FatalfString(),
+	}
+}
+
+func FatalfUint(inHex bool) string {
 	s := "expected %d but got %d\n"
 	if inHex {
 		s = "expected 0x%x but got 0x%x\n"
 	}
 
-	t.Fatalf(s, expected, actual)
+	return s
 }
 
-func ErrInt(t *testing.T, expected int, actual int, inHex bool) {
+func FatalfInt(inHex bool) string {
 	s := "expected %d but got %d\n"
 	if inHex {
 		s = "expected 0x%x but got 0x%x\n"
 	}
 
-	t.Fatalf(s, expected, actual)
+	return s
 }
 
-func ErrString(t *testing.T, expected string, actual string) {
-	t.Fatalf("expected '%s' but got '%s'\n", expected, actual)
+func FatalfString() string {
+	return "expected '%s' but got '%s'\n"
 }
