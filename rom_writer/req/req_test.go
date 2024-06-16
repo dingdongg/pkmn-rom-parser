@@ -97,7 +97,7 @@ func TestWriteBattleStats(t *testing.T) {
 
 	for i := 0; i < len(byteForm); i += 2 {
 		t.Logf("index %d\n", i)
-		expected := stats[i]
+		expected := stats[i / 2]
 		actual := binary.LittleEndian.Uint16(byteForm[i : i+2])
 		if actual != uint16(expected) {
 			t.Fatalf(templates.UintHex, expected, actual)
