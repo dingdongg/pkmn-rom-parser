@@ -1,6 +1,7 @@
 package req
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 
@@ -14,7 +15,7 @@ func (wr WriteRequest) WriteItem(itemName string) {
 	if !ok {
 		log.Fatalf("failed to write item '%s'; doesn't exist\n", itemName)
 	}
-	wr.Contents[ITEM] = WriteUint{item.Index, 2, 8}
+	wr.Contents[ITEM] = WriteUint{item.Index, 2}
 }
 
 func (wr WriteRequest) WriteAbility(ability string) {
@@ -23,25 +24,21 @@ func (wr WriteRequest) WriteAbility(ability string) {
 	if !ok {
 		log.Fatalf("failed to write ability '%s'; doesn't exist\n", ability)
 	}
-	wr.Contents[ABILITY] = WriteUint{abilityId, 1, 8}
+	wr.Contents[ABILITY] = WriteUint{abilityId, 1}
 }
 
-func (wr WriteRequest) WriteEV(value CompressibleStat) {
-	wr.Contents[EV] = WriteUint{value.Compress(8), 6, 8}
+// TODO improve signature. since golang doesn't does support struct spreading like JS, it's
+// clunky to use like this
+func (wr WriteRequest) WriteBattleStats(hp, atk, def, spa, spd, spe uint) {
+	wr.Contents[BATTLE_STATS] = WriteStats{hp, atk, def, spa, spd, spe}
 }
 
-func (wr WriteRequest) WriteIV(value CompressibleStat) {
-	fmt.Printf("0b %b\n", value.Compress(5))
-	// reverse the bits, since memory is stored in little endian
-	// doesn't have to be reversed for EVs/battles stats,
-	// since each item (hp, atk, def, etc.) is stored in little endian
-	// but preserves order (ie. hp-atk-def is NOT written as def-atk-hp)
-	b := byte(value.Compress(5))
-	b = ((b & 0xF0) >> 4) | ((b & 0x0F) << 4)
-	b = ((b & 0xCC) >> 2) | ((b & 0x33) << 2)
-	b = ((b & 0xAA) >> 1) | ((b & 0x55) << 1)
+func (wr WriteRequest) WriteEV(hp, atk, def, spa, spd, spe uint) {
+	wr.Contents[EV] = WriteEffortValue{hp, atk, def, spa, spd, spe}
+}
 
-	wr.Contents[IV] = WriteUint{uint(b), 6, 5}
+func (wr WriteRequest) WriteIV(hp, atk, def, spa, spd, spe uint) {
+	wr.Contents[IV] = WriteIndivValue{hp, atk, def, spa, spd, spe}
 }
 
 func (wr WriteRequest) WriteNickname(name string) {
@@ -49,13 +46,7 @@ func (wr WriteRequest) WriteNickname(name string) {
 }
 
 func (wr WriteRequest) WriteLevel(level uint) {
-	wr.Contents[LEVEL] = WriteUint{level, 1, 8}
-}
-
-// TODO improve signature. since golang doesn't does support struct spreading like JS, it's
-// clunky to use like this
-func (wr WriteRequest) WriteBattleStats(hp, atk, def, spa, spd, spe uint) {
-	wr.Contents[BATTLE_STATS] = WriteStats{hp, atk, def, spa, spd, spe}
+	wr.Contents[LEVEL] = WriteUint{level, 1}
 }
 
 func (ws WriteStats) Bytes() ([]byte, error) {
@@ -72,33 +63,64 @@ func (ws WriteStats) Bytes() ([]byte, error) {
 	return res, nil
 }
 
+func (wev WriteEffortValue) Bytes() ([]byte, error) {
+	buf := make([]byte, 6)
+	stats := [6]uint{wev.Hp, wev.Attack, wev.Defense, wev.Speed, wev.SpAttack, wev.SpDefense}
+
+	for i, s := range stats {
+		if s > 255 {
+			return []byte{}, fmt.Errorf("effort value must be <= 255")
+		}
+		buf[i] = byte(s)
+	}
+
+	return buf, nil
+}
+
+func (wiv WriteIndivValue) Bytes() ([]byte, error) {
+	buf := uint32(0)
+	stats := [6]uint{wiv.Hp, wiv.Attack, wiv.Defense, wiv.Speed, wiv.SpAttack, wiv.SpDefense}
+	
+	for i, s := range stats {
+		if s > 31 {
+			return []byte{} , fmt.Errorf("individual value must be <= 31")
+		}
+		masked := s & 0b11111
+		buf |= uint32(masked << (i * 5))
+	}
+	
+	res := make([]byte, 4)
+	binary.LittleEndian.PutUint32(res, buf)
+	return res, nil
+}
+
 func (wu WriteUint) Bytes() ([]byte, error) {
 	res := make([]byte, 0)
-	bitmask := uint(1 << wu.ItemBits) - 1
 
-	for i := uint(0); i < wu.NumItems; i++ {
-		item := wu.Val >> (i * wu.ItemBits)
-		b := byte(item & bitmask)
-		res = append(res, b)
+	if wu.NumBytes == 1 {
+		res = append(res, byte(wu.Val))
+	} else if wu.NumBytes == 2 {
+		binary.LittleEndian.AppendUint16(res, uint16(wu.Val))
+	} else if wu.NumBytes == 4 {
+		binary.LittleEndian.AppendUint32(res, uint32(wu.Val))
+	} else if wu.NumBytes == 8 {
+		binary.LittleEndian.AppendUint64(res, uint64(wu.Val))
+	} else {
+		return res, fmt.Errorf("too many bytes")
 	}
 
 	return res, nil
 }
 
 func (ws WriteString) Bytes() ([]byte, error) {
-	res := make([]byte, 0)
-
-	min := func(a int, b int) int {
-		if a < b {
-			return a
-		}
-		return b
+	// gen. 4 NDS games allow up to 10 characters max (so 11 with null terminator)
+	if len(ws.Val) > 10 {
+		return []byte{}, fmt.Errorf("string can only be max 10 bytes long")
 	}
 
-	// gen. 4 NDS games allow up to 10 characters max (so 11 with null terminator)
-	prunedString := ws.Val[:min(len(ws.Val), 11)]
+	res := make([]byte, 0)
 
-	for _, r := range prunedString {
+	for _, r := range ws.Val {
 		index, err := char.Index(string(r))
 		if err != nil {
 			return []byte{}, err

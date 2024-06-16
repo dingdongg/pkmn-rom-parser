@@ -14,11 +14,28 @@ type WriteStats struct {
 	Speed     uint
 }
 
-// for IDs/level/IVs/EVs
+type WriteEffortValue struct {
+	Hp uint
+	Attack uint
+	Defense uint
+	SpAttack uint
+	SpDefense uint
+	Speed uint
+}
+
+type WriteIndivValue struct {
+	Hp uint
+	Attack uint
+	Defense uint
+	SpAttack uint
+	SpDefense uint
+	Speed uint
+}
+
+// for IDs/level
 type WriteUint struct {
 	Val uint
-	NumItems uint	// for compressed values, the number of items compressed
-	ItemBits uint	// for compressed values, number of bits to represent each item
+	NumBytes uint	// number of bytes. Used in Bytes() implementation
 }
 
 // for nicknames
