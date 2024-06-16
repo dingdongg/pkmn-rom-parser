@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"testing"
 
+	"github.com/dingdongg/pkmn-rom-parser/v5/char"
 	"github.com/dingdongg/pkmn-rom-parser/v5/tutil"
 )
 
@@ -103,4 +104,123 @@ func TestWriteBattleStats(t *testing.T) {
 			t.Fatalf(templates.UintHex, expected, actual)
 		}
 	}
-}	
+}
+
+func TestWriteEV(t *testing.T) {
+	wr := NewWriteRequest(0)
+	stats := [6]uint{0, 0, 0, 252, 252, 6}
+	wr.WriteEV(stats[0], stats[1], stats[2], stats[4], stats[5], stats[3])
+
+	res, ok := wr.Contents[EV]
+
+	if !ok {
+		t.Fatal("expected map entry to exeist, but got DNE")
+	}
+
+	byteForm, err := res.Bytes()
+	if err != nil {
+		t.Fatal("byte conversion failed")
+	}
+
+	if len(byteForm) != 6 {
+		t.Fatalf(templates.Int, 6, len(byteForm))
+	}
+
+	for i := 0; i < len(byteForm); i++ {
+		t.Logf("index %d\n", i)
+		expected := stats[i]
+		actual := byteForm[i]
+		if actual != byte(expected) {
+			t.Fatalf(templates.UintHex, expected, actual)
+		}
+	}
+}
+
+func TestWriteIV(t *testing.T) {
+	wr := NewWriteRequest(0)
+	stats := [6]uint{0, 31, 14, 5, 21, 30}
+	wr.WriteIV(stats[0], stats[1], stats[2], stats[4], stats[5], stats[3])
+
+	res, ok := wr.Contents[IV]
+
+	if !ok {
+		t.Fatal("expected map entry to exeist, but got DNE")
+	}
+
+	byteForm, err := res.Bytes()
+	if err != nil {
+		t.Fatal("byte conversion failed")
+	}
+
+	if len(byteForm) != 4 {
+		t.Fatalf(templates.Int, 4, len(byteForm))
+	}
+
+	mask := uint32(0b11111)
+	ivs := binary.LittleEndian.Uint32(byteForm)
+	for i := 0; i < 6; i++ {
+		val := (ivs >> (i * 5)) & mask
+		t.Log(val, stats[i])
+		if val != uint32(stats[i]) {
+			t.Fatalf(templates.Uint, stats[i], val)
+		}
+	}
+}
+
+func TestWriteNicknameTooLong(t *testing.T) {
+	wr := NewWriteRequest(0)
+	name := "way too long of a anme";
+	wr.WriteNickname(name)
+
+	res, ok := wr.Contents[NICKNAME]
+
+	if !ok {
+		t.Fatal("expected map entry to exist, but got DNE")
+	}
+
+	if _, err := res.Bytes(); err == nil {
+		t.Fatal("expected res.Bytes() to fail")
+	}
+}
+
+func TestWriteNickname(t *testing.T) {
+	wr := NewWriteRequest(0)
+	name := "trainer"
+	wr.WriteNickname(name)
+
+	res, ok := wr.Contents[NICKNAME]
+
+	if !ok {
+		t.Fatal("expected map entry to exeist, but got DNE")
+	}
+
+	byteForm, err := res.Bytes()
+	if err != nil {
+		t.Fatal("byte conversion failed")
+	}
+
+	if len(byteForm) != 22 {
+		t.Fatalf(templates.Int, 22, len(byteForm))
+	}
+
+	for i, r := range name {
+		expected, _ := char.Index(string(r))
+		actual := binary.LittleEndian.Uint16(byteForm[i*2 : (i*2)+2])
+		t.Logf(templates.UintHex, expected, actual)
+		if expected != actual {
+			t.Fatalf(templates.UintHex, expected, actual)
+		}
+	}
+
+	nullTerminator := binary.LittleEndian.Uint16(byteForm[len(name)*2  : len(name)*2+2])
+	if nullTerminator != 65535 {
+		t.Fatalf(templates.UintHex, 65535, nullTerminator)
+	}
+
+	zerosIndex := len(name) * 2 + 2
+	for i := zerosIndex; i < 22; i++ {
+		if byteForm[i] != 0 {
+			t.Fatalf(templates.Uint, 0, byteForm[i])
+		}
+	}
+}
