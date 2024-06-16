@@ -102,7 +102,10 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []req.Wr
 			if _, ok := changes[wr.PartyIndex]; !ok {
 				changes[wr.PartyIndex] = crypt.DecryptPokemon(savefile[offset:])
 			}
-			copy(changes[wr.PartyIndex][blockAddress+uint(dataOffset):], bytes)
+			size := copy(changes[wr.PartyIndex][blockAddress+uint(dataOffset):], bytes)
+			if size != len(bytes) {
+				return []byte{}, fmt.Errorf("possible buffer overflow: %d bytes actually copied, expected %d bytes to be copied", size, len(bytes))
+			}
 
 			if _, seen := updatedPokemonIndexes[wr.PartyIndex]; !seen {
 				updatedPokemonIndexes[wr.PartyIndex] = true
