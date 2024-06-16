@@ -3,7 +3,7 @@ package shuffler
 import (
 	"testing"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v6/consts"
 )
 
 func TestGetUnshuffledPos(t *testing.T) {

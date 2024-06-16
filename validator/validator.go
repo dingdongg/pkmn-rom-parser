@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v6/crypt"
 )
 
 /*

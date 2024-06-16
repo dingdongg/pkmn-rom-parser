@@ -3,8 +3,8 @@ package req
 import (
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v5/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v6/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v6/shuffler"
 )
 
 const (

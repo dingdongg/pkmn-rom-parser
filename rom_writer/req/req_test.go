@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/char"
-	"github.com/dingdongg/pkmn-rom-parser/v5/tutil"
+	"github.com/dingdongg/pkmn-rom-parser/v6/char"
+	"github.com/dingdongg/pkmn-rom-parser/v6/tutil"
 )
 
 var templates = tutil.GetTemplates()
@@ -80,7 +80,7 @@ func TestWriteBattleStats(t *testing.T) {
 	wr := NewWriteRequest(0)
 	stats := [6]uint{65535, 0, 124, 7000, 333, 255}
 	wr.WriteBattleStats(stats[0], stats[1], stats[2], stats[4], stats[5], stats[3])
-	
+
 	res, ok := wr.Contents[BATTLE_STATS]
 
 	if !ok {
@@ -98,7 +98,7 @@ func TestWriteBattleStats(t *testing.T) {
 
 	for i := 0; i < len(byteForm); i += 2 {
 		t.Logf("index %d\n", i)
-		expected := stats[i / 2]
+		expected := stats[i/2]
 		actual := binary.LittleEndian.Uint16(byteForm[i : i+2])
 		if actual != uint16(expected) {
 			t.Fatalf(templates.UintHex, expected, actual)
@@ -169,7 +169,7 @@ func TestWriteIV(t *testing.T) {
 
 func TestWriteNicknameTooLong(t *testing.T) {
 	wr := NewWriteRequest(0)
-	name := "way too long of a anme";
+	name := "way too long of a anme"
 	wr.WriteNickname(name)
 
 	res, ok := wr.Contents[NICKNAME]
@@ -212,12 +212,12 @@ func TestWriteNickname(t *testing.T) {
 		}
 	}
 
-	nullTerminator := binary.LittleEndian.Uint16(byteForm[len(name)*2  : len(name)*2+2])
+	nullTerminator := binary.LittleEndian.Uint16(byteForm[len(name)*2 : len(name)*2+2])
 	if nullTerminator != 65535 {
 		t.Fatalf(templates.UintHex, 65535, nullTerminator)
 	}
 
-	zerosIndex := len(name) * 2 + 2
+	zerosIndex := len(name)*2 + 2
 	for i := zerosIndex; i < 22; i++ {
 		if byteForm[i] != 0 {
 			t.Fatalf(templates.Uint, 0, byteForm[i])

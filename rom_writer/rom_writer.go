@@ -4,11 +4,11 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v5/crypt"
-	"github.com/dingdongg/pkmn-rom-parser/v5/rom_writer/req"
-	"github.com/dingdongg/pkmn-rom-parser/v5/shuffler"
-	"github.com/dingdongg/pkmn-rom-parser/v5/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v6/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v6/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v6/rom_writer/req"
+	"github.com/dingdongg/pkmn-rom-parser/v6/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v6/validator"
 )
 
 /*

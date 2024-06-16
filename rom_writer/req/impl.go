@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v5/char"
-	"github.com/dingdongg/pkmn-rom-parser/v5/data"
+	"github.com/dingdongg/pkmn-rom-parser/v6/char"
+	"github.com/dingdongg/pkmn-rom-parser/v6/data"
 )
 
 func (wr WriteRequest) WriteItem(itemName string) {
@@ -80,15 +80,15 @@ func (wev WriteEffortValue) Bytes() ([]byte, error) {
 func (wiv WriteIndivValue) Bytes() ([]byte, error) {
 	buf := uint32(0)
 	stats := [6]uint{wiv.Hp, wiv.Attack, wiv.Defense, wiv.Speed, wiv.SpAttack, wiv.SpDefense}
-	
+
 	for i, s := range stats {
 		if s > 31 {
-			return []byte{} , fmt.Errorf("individual value must be <= 31")
+			return []byte{}, fmt.Errorf("individual value must be <= 31")
 		}
 		masked := s & 0b11111
 		buf |= uint32(masked << (i * 5))
 	}
-	
+
 	res := make([]byte, 4)
 	binary.LittleEndian.PutUint32(res, buf)
 	return res, nil
