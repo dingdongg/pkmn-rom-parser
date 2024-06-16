@@ -41,3 +41,12 @@ func FatalfInt(inHex bool) string {
 func FatalfString() string {
 	return "expected '%s' but got '%s'\n"
 }
+
+func LogSlice(hex bool) string {
+	s := "[ %+v ]\n"
+	if hex {
+		s = "[ 0x%+x ]\n"
+	}
+
+	return s
+}
