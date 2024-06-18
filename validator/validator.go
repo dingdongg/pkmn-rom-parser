@@ -72,7 +72,7 @@ func (b Block) String() string {
 		data: % +x...,
 		    %s,
 		address: 0x%x,
-	}`, b.BlockData[0:0x14], b.Footer, b.Address)
+	}`, b.BlockData[0:0x10], b.Footer, b.Address)
 }
 
 // footer format specifier
@@ -90,13 +90,14 @@ func (f Footer) String() string {
 
 func (c Chunk) isValid() bool {
 	smallChecksum := crypt.CRC16_CCITT(c.SmallBlock.BlockData)
-	fmt.Printf("expected: 0x%x; actual: 0x%x\n", smallChecksum, c.SmallBlock.Footer.Checksum)
+	fmt.Println("checking small block checksum")
 	if smallChecksum != c.SmallBlock.Footer.Checksum {
 		return false
 	}
 	fmt.Println("checking big block checksum")
 
 	bigChecksum := crypt.CRC16_CCITT(c.BigBlock.BlockData)
+	fmt.Println("success")
 	return bigChecksum == c.BigBlock.Footer.Checksum
 }
 
@@ -243,6 +244,7 @@ func validateHGSS(savefile []byte) error {
 
 	// it's possible that this first chunk hasn't been initialized yet,
 	// (if the player just started and only saved once)
+	// TODO: figure out a way around this
 	if !firstChunk.isValid() {
 		fmt.Println("First chunk invalid")
 		return errors.New("invalid savefile")
