@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dingdongg/pkmn-rom-parser/v7/consts/gamever"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 )
 
@@ -105,6 +106,34 @@ func Validate(savefile []byte) error {
 		return errors.New("invalid savefile")
 	}
 
+	// identify the game version here
+	gameVersion, err := identifyGameVersion(savefile)
+	if err != nil {
+		return errors.New("unrecognized game file")
+	}
+
+	var res error = nil
+
+	// choose validation strategy based on game version
+	switch (gameVersion) {
+	case gamever.PLAT:
+		res = validatePLAT(savefile)
+	case gamever.HGSS:
+		res = validateHGSS(savefile)
+	default:
+		return errors.New("unrecognized/unsupported game file")
+	}
+
+	return res
+}
+
+func identifyGameVersion(savefile []byte) (gamever.GameVer, error) {
+	// gen 4 games start writing to the 0x40000-offset address space,
+	// check there for the existence of a valid footer
+	return -1, nil
+}
+
+func validatePLAT(savefile []byte) error {
 	firstChunk := GetChunk(savefile, 0)
 	secondChunk := GetChunk(savefile, secondChunkOffset)
 
@@ -118,5 +147,9 @@ func Validate(savefile []byte) error {
 		return errors.New("invalid savefile")
 	}
 
+	return nil
+}
+
+func validateHGSS(savefile []byte) error {
 	return nil
 }
