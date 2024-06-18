@@ -12,7 +12,7 @@ func CRC16_CCITT(data []byte) uint16 {
 	sum := uint(0xFFFF)
 
 	for _, b := range data {
-		sum = (sum << 8) ^ seeds[b^byte((sum>>8))]
+		sum = (sum << 8) ^ seeds[b^byte(sum>>8)]
 	}
 
 	return uint16(sum)
