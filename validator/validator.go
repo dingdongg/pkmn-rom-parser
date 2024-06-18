@@ -47,6 +47,14 @@ const savefileSize int = 1 << 19
 const footerSize uint = 0x14
 const secondChunkOffset uint = 0x40000
 
+const PLAT_SB_END uint = uint(0xCF2C) // non-inclusive
+const PLAT_BB_START uint = PLAT_SB_END + 0x0
+const PLAT_BB_END uint = PLAT_BB_START + 0x121E4 // non-inclusive
+
+const HGSS_SB_END uint = uint(0xF628) // non-inclusive
+const HGSS_BB_START uint = HGSS_SB_END + 0xD8 // padding included in hgss
+const HGSS_BB_END uint = HGSS_BB_START + 0x12310 // non-inclusive
+
 func getFooter(buf []byte) Footer {
 	return Footer{
 		binary.LittleEndian.Uint32(buf[:0x4]),
@@ -56,6 +64,15 @@ func getFooter(buf []byte) Footer {
 		binary.LittleEndian.Uint16(buf[0x10:0x12]),
 		binary.LittleEndian.Uint16(buf[0x12:0x14]),
 	}
+}
+
+func (b Block) String() string {
+	return fmt.Sprintf(`
+	Block {
+		data: % +x...,
+		    %s,
+		address: 0x%x,
+	}`, b.BlockData[0:0x14], b.Footer, b.Address)
 }
 
 // footer format specifier
@@ -73,9 +90,11 @@ func (f Footer) String() string {
 
 func (c Chunk) isValid() bool {
 	smallChecksum := crypt.CRC16_CCITT(c.SmallBlock.BlockData)
+	fmt.Printf("expected: 0x%x; actual: 0x%x\n", smallChecksum, c.SmallBlock.Footer.Checksum)
 	if smallChecksum != c.SmallBlock.Footer.Checksum {
 		return false
 	}
+	fmt.Println("checking big block checksum")
 
 	bigChecksum := crypt.CRC16_CCITT(c.BigBlock.BlockData)
 	return bigChecksum == c.BigBlock.Footer.Checksum
@@ -132,18 +151,12 @@ func Validate(savefile []byte) error {
 func identifyGameVersion(savefile []byte) (gamever.GameVer, error) {
 	// gen 4 games start writing to the 0x40000-offset address space,
 	// check there for the existence of a valid footer
-	offset := uint(0x40000)
-	PLAT_SB_END := uint(0xCF2C) // non-inclusive
-	PLAT_BB_START := PLAT_SB_END + 0x0
-	PLAT_BB_END := PLAT_BB_START + 0x121E4 // non-inclusive
 
-	HGSS_SB_END := uint(0xF628) // non-inclusive
-	HGSS_BB_START := HGSS_SB_END + 0xD8 // padding included in hgss
-	HGSS_BB_END := HGSS_BB_START + 0x12310 // non-inclusive
-
-	if isPLAT(savefile, offset, footerSize, PLAT_SB_END, PLAT_BB_END) {
+	if isPLAT(savefile, secondChunkOffset, footerSize, PLAT_SB_END, PLAT_BB_END) {
+		fmt.Println("Game: pokemon PLAT")
 		return gamever.PLAT, nil
-	} else if isHGSS(savefile, offset, footerSize, HGSS_SB_END, HGSS_BB_END) {
+	} else if isHGSS(savefile, secondChunkOffset, footerSize, HGSS_SB_END, HGSS_BB_END) {
+		fmt.Println("Game: pokemon HGSS")
 		return gamever.HGSS, nil
 	}
 
@@ -196,9 +209,18 @@ func isHGSS(savefile []byte, offset uint, footerSize uint, smallBlockEnd uint, b
 	return true
 }
 
+func (c Chunk) log() {
+	fmt.Println(c.SmallBlock)
+	fmt.Println(c.BigBlock)
+	fmt.Println("-------------")
+}
+
 func validatePLAT(savefile []byte) error {
 	firstChunk := GetChunk(savefile, 0)
 	secondChunk := GetChunk(savefile, secondChunkOffset)
+
+	firstChunk.log()
+	secondChunk.log()
 
 	if !firstChunk.isValid() {
 		fmt.Println("First chunk invalid")
@@ -217,10 +239,16 @@ func validateHGSS(savefile []byte) error {
 	firstChunk := GetChunkHGSS(savefile, 0)
 	secondChunk := GetChunkHGSS(savefile, secondChunkOffset)
 
+	firstChunk.log()
+
+	// it's possible that this first chunk hasn't been initialized yet,
+	// (if the player just started and only saved once)
 	if !firstChunk.isValid() {
 		fmt.Println("First chunk invalid")
 		return errors.New("invalid savefile")
 	}
+
+	secondChunk.log()
 
 	if !secondChunk.isValid() {
 		fmt.Println("Second chunk invalid")
@@ -231,5 +259,21 @@ func validateHGSS(savefile []byte) error {
 }
 
 func GetChunkHGSS(savefile []byte, offset uint) Chunk {
-	return Chunk{}
+	// fmt.Printf("HGSS: getting chunk at offset 0x%x\n", offset)
+	smallBlockFooterAddr := HGSS_SB_END + offset - footerSize
+	bigBlockFooterAddr := HGSS_BB_END + offset - footerSize
+
+	smallBlock := Block{
+		savefile[offset : smallBlockFooterAddr+0x4], // for some reason, footer identifier is included in the checksum calculations
+		getFooter(savefile[smallBlockFooterAddr : smallBlockFooterAddr+footerSize]),
+		offset,
+	}
+
+	bigBlock := Block{
+		savefile[offset+HGSS_BB_START : bigBlockFooterAddr+0x4], // for some reason, footer identifier is included in the checksum calculations
+		getFooter(savefile[bigBlockFooterAddr : bigBlockFooterAddr+footerSize]),
+		offset+HGSS_BB_START,
+	}
+
+	return Chunk{smallBlock, bigBlock}
 }
