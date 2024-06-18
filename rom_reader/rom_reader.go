@@ -2,6 +2,7 @@ package rom_reader
 
 import (
 	"encoding/binary"
+	"fmt"
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
@@ -34,6 +35,19 @@ type Pokemon struct {
 	Ability string
 	EVs     Stats
 	IVs     Stats
+}
+
+func (p Pokemon) String() string {
+	return fmt.Sprintf(`
+	Pokemon {
+		%s (#%d) Level: %d
+		%+v
+		held item (id): %s
+		Nature: %s
+		Ability: %s
+		EV: %+v
+		IV: %+v
+	}`, p.Name, p.PokedexId, p.BattleStat.Level, p.BattleStat.Stats, p.Item, p.Nature, p.Ability, p.EVs, p.IVs)
 }
 
 const (
