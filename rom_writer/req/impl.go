@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v6/char"
-	"github.com/dingdongg/pkmn-rom-parser/v6/data"
+	"github.com/dingdongg/pkmn-rom-parser/v7/char"
+	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 )
 
 func (wr WriteRequest) WriteItem(itemName string) {

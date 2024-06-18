@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dingdongg/pkmn-rom-parser/v6/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v7/consts"
 )
 
 // from https://projectpokemon.org/home/docs/gen-4/pkm-structure-r65/

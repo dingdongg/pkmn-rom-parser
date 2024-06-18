@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/dingdongg/pkmn-rom-parser/v6/char"
-	"github.com/dingdongg/pkmn-rom-parser/v6/tutil"
+	"github.com/dingdongg/pkmn-rom-parser/v7/char"
+	"github.com/dingdongg/pkmn-rom-parser/v7/tutil"
 )
 
 var templates = tutil.GetTemplates()

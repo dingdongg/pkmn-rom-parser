@@ -16,7 +16,7 @@ Application used to parse in-game information in generation IV/V Pokemon games.
 
 ## Installation
 ```sh
-go get github.com/dingdongg/pkmn-rom-parser/v6
+go get github.com/dingdongg/pkmn-rom-parser/v7
 ```
 
 ## Usage
