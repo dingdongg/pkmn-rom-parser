@@ -7,3 +7,5 @@ dev/*
 
 main 
 results*
+
+sav/*_test.go
