@@ -7,8 +7,8 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/rom_writer/req"
+	"github.com/dingdongg/pkmn-rom-parser/v7/sav"
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
-	"github.com/dingdongg/pkmn-rom-parser/v7/validator"
 )
 
 /*
@@ -70,7 +70,7 @@ func (wrb *WriteRequestBuilder) AddRequest(partyIndex uint) (req.WriteRequest, e
 	return request, nil
 }
 
-func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []req.WriteRequest) ([]byte, error) {
+func UpdatePartyPokemon(savefile []byte, chunk sav.Chunk, newData []req.WriteRequest) ([]byte, error) {
 	updatedPokemonIndexes := make(map[uint]bool, 0)
 	base := chunk.SmallBlock.Address + consts.PERSONALITY_OFFSET
 	changes := make(StagingMap)
@@ -124,7 +124,7 @@ func UpdatePartyPokemon(savefile []byte, chunk validator.Chunk, newData []req.Wr
 	return savefile, nil
 }
 
-func updateBlockChecksum(savefile []byte, chunk validator.Chunk) {
+func updateBlockChecksum(savefile []byte, chunk sav.Chunk) {
 	start := chunk.SmallBlock.Address
 	end := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
 	newChecksum := crypt.CRC16_CCITT(savefile[start:end])
