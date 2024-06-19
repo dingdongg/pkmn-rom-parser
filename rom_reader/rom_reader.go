@@ -57,6 +57,7 @@ const (
 	D uint = iota
 )
 
+// TODO: update function to use ISave methods instead
 func GetPartyPokemon(ciphertext []byte) []Pokemon {
 	var party []Pokemon
 

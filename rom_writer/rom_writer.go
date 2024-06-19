@@ -70,6 +70,7 @@ func (wrb *WriteRequestBuilder) AddRequest(partyIndex uint) (req.WriteRequest, e
 	return request, nil
 }
 
+// TODO: update function to use ISave methods instead
 func UpdatePartyPokemon(savefile []byte, chunk sav.Chunk, newData []req.WriteRequest) ([]byte, error) {
 	updatedPokemonIndexes := make(map[uint]bool, 0)
 	base := chunk.SmallBlock.Address + consts.PERSONALITY_OFFSET
