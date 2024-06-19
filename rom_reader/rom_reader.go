@@ -9,6 +9,7 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/consts"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
+	"github.com/dingdongg/pkmn-rom-parser/v7/sav"
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
 )
 
@@ -58,7 +59,9 @@ const (
 )
 
 // TODO: update function to use ISave methods instead
-func GetPartyPokemon(ciphertext []byte, size uint32) []Pokemon {
+func GetPartyPokemon(game sav.ISave) []Pokemon {
+	size := game.PartySize()
+	ciphertext := game.PartySection()
 	var party []Pokemon
 
 	for i := uint(0); i < uint(size); i++ {
