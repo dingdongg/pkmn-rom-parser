@@ -66,6 +66,10 @@ func getFooter(buf []byte) Footer {
 	}
 }
 
+func NewBlock(data []byte, footer []byte, startAddr uint) Block {
+	return Block{ data, getFooter(footer), startAddr }
+}
+
 func (b Block) String() string {
 	return fmt.Sprintf(`
 	Block {
@@ -88,7 +92,7 @@ func (f Footer) String() string {
 	}`, f.Identifier, f.SaveNumber, f.BlockSize, f.K, f.T, f.Checksum)
 }
 
-func (c Chunk) isValid() bool {
+func (c Chunk) IsValid() bool {
 	smallChecksum := crypt.CRC16_CCITT(c.SmallBlock.BlockData)
 	fmt.Println("checking small block checksum")
 	if smallChecksum != c.SmallBlock.Footer.Checksum {
@@ -223,12 +227,12 @@ func validatePLAT(savefile []byte) error {
 	firstChunk.log()
 	secondChunk.log()
 
-	if !firstChunk.isValid() {
+	if !firstChunk.IsValid() {
 		fmt.Println("First chunk invalid")
 		return errors.New("invalid savefile")
 	}
 
-	if !secondChunk.isValid() {
+	if !secondChunk.IsValid() {
 		fmt.Println("Second chunk invalid")
 		return errors.New("invalid savefile")
 	}
@@ -245,14 +249,14 @@ func validateHGSS(savefile []byte) error {
 	// it's possible that this first chunk hasn't been initialized yet,
 	// (if the player just started and only saved once)
 	// TODO: figure out a way around this
-	if !firstChunk.isValid() {
+	if !firstChunk.IsValid() {
 		fmt.Println("First chunk invalid")
 		return errors.New("invalid savefile")
 	}
 
 	secondChunk.log()
 
-	if !secondChunk.isValid() {
+	if !secondChunk.IsValid() {
 		fmt.Println("Second chunk invalid")
 		return errors.New("invalid savefile")
 	}
