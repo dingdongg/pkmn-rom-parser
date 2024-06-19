@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v6/prng"
+	"github.com/dingdongg/pkmn-rom-parser/v7/prng"
 )
 
 // Computes a checksum via the CRC16-CCITT algorithm on the given data
@@ -12,7 +12,7 @@ func CRC16_CCITT(data []byte) uint16 {
 	sum := uint(0xFFFF)
 
 	for _, b := range data {
-		sum = (sum << 8) ^ seeds[b^byte((sum>>8))]
+		sum = (sum << 8) ^ seeds[b^byte(sum>>8)]
 	}
 
 	return uint16(sum)

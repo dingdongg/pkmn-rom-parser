@@ -1,30 +1,27 @@
 package parser
 
 import (
-	"github.com/dingdongg/pkmn-rom-parser/v6/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v6/rom_reader"
-	"github.com/dingdongg/pkmn-rom-parser/v6/rom_writer"
-	"github.com/dingdongg/pkmn-rom-parser/v6/rom_writer/req"
-	"github.com/dingdongg/pkmn-rom-parser/v6/validator"
-	"github.com/dingdongg/pkmn-rom-parser/v6/validator/locator"
+	"github.com/dingdongg/pkmn-rom-parser/v7/rom_reader"
+	"github.com/dingdongg/pkmn-rom-parser/v7/rom_writer"
+	"github.com/dingdongg/pkmn-rom-parser/v7/rom_writer/req"
+	"github.com/dingdongg/pkmn-rom-parser/v7/sav"
 )
 
 func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
-	if err := validator.Validate(savefile); err != nil {
+	game, err := sav.Validate(savefile)
+	if err != nil {
 		return []rom_reader.Pokemon{}, err
 	}
 
-	chunk := locator.GetLatestSaveChunk(savefile)
-	partyData := chunk.SmallBlock.BlockData[consts.PERSONALITY_OFFSET:]
-
-	return rom_reader.GetPartyPokemon(partyData), nil
+	partyData := rom_reader.GetPartyPokemon(game)
+	return partyData, nil
 }
 
 func Write(savefile []byte, newBytes []req.WriteRequest) ([]byte, error) {
-	if err := validator.Validate(savefile); err != nil {
+	game, err := sav.Validate(savefile)
+	if err != nil {
 		return []byte{}, err
 	}
 
-	chunk := locator.GetLatestSaveChunk(savefile)
-	return rom_writer.UpdatePartyPokemon(savefile, *chunk, newBytes)
+	return rom_writer.UpdatePartyPokemon(game, newBytes)
 }

@@ -2,13 +2,15 @@ package rom_reader
 
 import (
 	"encoding/binary"
+	"fmt"
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v6/char"
-	"github.com/dingdongg/pkmn-rom-parser/v6/consts"
-	"github.com/dingdongg/pkmn-rom-parser/v6/crypt"
-	"github.com/dingdongg/pkmn-rom-parser/v6/data"
-	"github.com/dingdongg/pkmn-rom-parser/v6/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v7/char"
+	"github.com/dingdongg/pkmn-rom-parser/v7/consts"
+	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v7/data"
+	"github.com/dingdongg/pkmn-rom-parser/v7/sav"
+	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
 )
 
 type Stats struct {
@@ -36,6 +38,19 @@ type Pokemon struct {
 	IVs     Stats
 }
 
+func (p Pokemon) String() string {
+	return fmt.Sprintf(`
+	Pokemon {
+		%s (#%d) Level: %d
+		%+v
+		held item (id): %s
+		Nature: %s
+		Ability: %s
+		EV: %+v
+		IV: %+v
+	}`, p.Name, p.PokedexId, p.BattleStat.Level, p.BattleStat.Stats, p.Item, p.Nature, p.Ability, p.EVs, p.IVs)
+}
+
 const (
 	A uint = iota
 	B uint = iota
@@ -43,10 +58,13 @@ const (
 	D uint = iota
 )
 
-func GetPartyPokemon(ciphertext []byte) []Pokemon {
+// TODO: update function to use ISave methods instead
+func GetPartyPokemon(game sav.ISave) []Pokemon {
+	size := game.PartySize()
+	ciphertext := game.PartySection()
 	var party []Pokemon
 
-	for i := uint(0); i < 6; i++ {
+	for i := uint(0); i < uint(size); i++ {
 		party = append(party, parsePokemon(ciphertext, i))
 	}
 
