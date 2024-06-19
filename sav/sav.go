@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/consts/gamever"
-	"github.com/dingdongg/pkmn-rom-parser/v7/validator"
 )
 
 type ISave interface {
-	GetChunk(offset uint) validator.Chunk
+	GetChunk(offset uint) Chunk
 	Validate() error
+	GetLatestData() *Chunk
+	GetPartySection() []byte
 }
 
 type gen4Savefile struct {
@@ -34,16 +35,16 @@ func NewSavPLAT(savefile []byte) *savPLAT {
 	}
 }
 
-func (sav *savPLAT) GetChunk(offset uint) validator.Chunk {
+func (sav *savPLAT) GetChunk(offset uint) Chunk {
 	sbData := sav.data[0x0+offset : sav.smallBlockSize+offset-0x14]
 	sbFooter := sav.data[sav.smallBlockSize+offset-0x14 : sav.smallBlockSize+offset]
-	small := validator.NewBlock(sbData, sbFooter, 0x0 + offset)
+	small := NewBlock(sbData, sbFooter, 0x0 + offset)
 
 	bbData := sav.data[sav.smallBlockSize+offset : sav.smallBlockSize+offset+sav.bigBlockSize-0x14]
 	bbFooter := sav.data[sav.smallBlockSize+offset+sav.bigBlockSize-0x14 : sav.smallBlockSize+offset+sav.bigBlockSize]
-	big := validator.NewBlock(bbData, bbFooter, sav.smallBlockSize + offset)
+	big := NewBlock(bbData, bbFooter, sav.smallBlockSize + offset)
 
-	return validator.Chunk{
+	return Chunk{
 		SmallBlock: small, 
 		BigBlock: big,
 	}
@@ -66,6 +67,34 @@ func (sav *savPLAT) Validate() error {
 	return nil
 }
 
+func (sav *savPLAT) GetLatestData() *Chunk {
+	chunk1 := sav.GetChunk(0x0)
+	chunk2 := sav.GetChunk(0x40000)
+
+	var latestSmallBlock Block
+	if chunk1.SmallBlock.Footer.SaveNumber >= chunk2.SmallBlock.Footer.SaveNumber {
+		latestSmallBlock = chunk1.SmallBlock
+	} else {
+		latestSmallBlock = chunk2.SmallBlock
+	}
+
+	var latestBigBlock Block
+	if latestSmallBlock.Footer.Identifier == chunk1.BigBlock.Footer.Identifier {
+		latestBigBlock = chunk1.BigBlock
+	} else {
+		latestBigBlock = chunk2.BigBlock
+	}
+
+	return &Chunk{
+		SmallBlock: latestSmallBlock,
+		BigBlock:   latestBigBlock,
+	}
+}
+
+func (sav *savPLAT) GetPartySection() []byte {
+	return sav.data[sav.partyOffset:]
+}
+
 func NewSavHGSS(savefile []byte) *savHGSS {
 	return &savHGSS{
 		version: 		gamever.HGSS,
@@ -76,18 +105,18 @@ func NewSavHGSS(savefile []byte) *savHGSS {
 	}
 }
 
-func (sav *savHGSS) GetChunk(offset uint) validator.Chunk {
+func (sav *savHGSS) GetChunk(offset uint) Chunk {
 	sbData := sav.data[0x0+offset : sav.smallBlockSize+offset-0x10]
 	sbFooter := sav.data[sav.smallBlockSize+offset-0x14 : sav.smallBlockSize+offset]
-	small := validator.NewBlock(sbData, sbFooter, 0x0 + offset)
+	small := NewBlock(sbData, sbFooter, 0x0 + offset)
 
 	padding := uint(0xD8)
 	bbStart := sav.smallBlockSize + padding
 	bbData := sav.data[bbStart+offset : bbStart+offset+sav.bigBlockSize-0x10]
 	bbFooter := sav.data[bbStart+offset+sav.bigBlockSize-0x14 : bbStart+offset+sav.bigBlockSize]
-	big := validator.NewBlock(bbData, bbFooter, bbStart + offset)
+	big := NewBlock(bbData, bbFooter, bbStart + offset)
 
-	return validator.Chunk{
+	return Chunk{
 		SmallBlock: small, 
 		BigBlock: big,
 	}
@@ -108,4 +137,45 @@ func (sav *savHGSS) Validate() error {
 	}
 
 	return nil
+}
+
+func (sav *savHGSS) GetLatestData() *Chunk {
+	chunk1 := sav.GetChunk(0x0)
+	chunk2 := sav.GetChunk(0x40000)
+
+	var latestSmallBlock Block
+	if chunk1.SmallBlock.Footer.SaveNumber >= chunk2.SmallBlock.Footer.SaveNumber {
+		latestSmallBlock = chunk1.SmallBlock
+	} else {
+		latestSmallBlock = chunk2.SmallBlock
+	}
+
+	var latestBigBlock Block
+	if latestSmallBlock.Footer.Identifier == chunk1.BigBlock.Footer.Identifier {
+		latestBigBlock = chunk1.BigBlock
+	} else {
+		latestBigBlock = chunk2.BigBlock
+	}
+
+	return &Chunk{
+		SmallBlock: latestSmallBlock,
+		BigBlock:   latestBigBlock,
+	}
+}
+
+func (sav *savHGSS) GetPartySection() []byte {
+	return sav.data[sav.partyOffset:]
+}
+
+func Validate(savefile []byte) (ISave, error) {
+	game, err := identifyGameVersion(savefile)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = game.Validate(); err != nil {
+		return nil, err
+	}
+
+	return game, nil
 }
