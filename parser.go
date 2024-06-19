@@ -13,9 +13,11 @@ func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 	if err := validator.Validate(savefile); err != nil {
 		return []rom_reader.Pokemon{}, err
 	}
-
+	// TODO: make ISave implement this method,
+	// then call this method regardless of specific game version
 	chunk := locator.GetLatestSaveChunk(savefile)
-	partyData := chunk.SmallBlock.BlockData[consts.PERSONALITY_OFFSET:]
+	// fmt.Println(*chunk)
+	partyData := chunk.SmallBlock.BlockData[consts.PERSONALITY_OFFSET_HGSS:]
 
 	return rom_reader.GetPartyPokemon(partyData), nil
 }
