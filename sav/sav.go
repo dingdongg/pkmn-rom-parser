@@ -5,11 +5,14 @@ import (
 )
 
 type ISave interface {
-	GetChunk(offset uint) Chunk
+	Chunk(offset uint) Chunk
 	Validate() error
-	GetLatestData() *Chunk
-	GetPartySection() []byte
-	GetPartySize() uint32
+	LatestData() *Chunk
+	PartySection() []byte
+	PartySize() uint32
+	PartyOffset() uint
+	Get(start uint, numBytes uint) []byte
+	Data() []byte
 }
 
 type gen4Savefile struct {

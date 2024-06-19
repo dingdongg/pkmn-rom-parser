@@ -71,9 +71,11 @@ func (wrb *WriteRequestBuilder) AddRequest(partyIndex uint) (req.WriteRequest, e
 }
 
 // TODO: update function to use ISave methods instead
-func UpdatePartyPokemon(savefile []byte, chunk sav.Chunk, newData []req.WriteRequest) ([]byte, error) {
+func UpdatePartyPokemon(savefile sav.ISave, newData []req.WriteRequest) ([]byte, error) {
 	updatedPokemonIndexes := make(map[uint]bool, 0)
-	base := chunk.SmallBlock.Address + consts.PERSONALITY_OFFSET
+
+	latestChunk := savefile.LatestData()
+	base := latestChunk.SmallBlock.Address + savefile.PartyOffset()
 	changes := make(StagingMap)
 
 	for _, wr := range newData {
@@ -84,7 +86,7 @@ func UpdatePartyPokemon(savefile []byte, chunk sav.Chunk, newData []req.WriteReq
 			}
 
 			offset := base + wr.PartyIndex*consts.PARTY_POKEMON_SIZE
-			personality := binary.LittleEndian.Uint32(savefile[offset : offset+4])
+			personality := binary.LittleEndian.Uint32(savefile.Get(offset, 4))
 
 			dataOffset, blockIndex, err := req.GetWriteLocation(request)
 			if err != nil {
@@ -101,7 +103,8 @@ func UpdatePartyPokemon(savefile []byte, chunk sav.Chunk, newData []req.WriteReq
 			}
 
 			if _, ok := changes[wr.PartyIndex]; !ok {
-				changes[wr.PartyIndex] = crypt.DecryptPokemon(savefile[offset:])
+				encryptedPokemon := savefile.Get(offset, consts.PARTY_POKEMON_SIZE)
+				changes[wr.PartyIndex] = crypt.DecryptPokemon(encryptedPokemon)
 			}
 			size := copy(changes[wr.PartyIndex][blockAddress+uint(dataOffset):], bytes)
 			if size != len(bytes) {
@@ -118,17 +121,18 @@ func UpdatePartyPokemon(savefile []byte, chunk sav.Chunk, newData []req.WriteReq
 		pokemonOffset := base + i*consts.PARTY_POKEMON_SIZE
 		encrypted := crypt.EncryptPokemon(changes[i])
 
-		copy(savefile[AbsAddress(pokemonOffset):], encrypted)
+		copy(savefile.Get(pokemonOffset, consts.PARTY_POKEMON_SIZE), encrypted)
 	}
 
-	updateBlockChecksum(savefile, chunk)
-	return savefile, nil
+	updateBlockChecksum(savefile)
+	return savefile.Data(), nil
 }
 
-func updateBlockChecksum(savefile []byte, chunk sav.Chunk) {
+func updateBlockChecksum(savefile sav.ISave) {
+	chunk := savefile.LatestData()
 	start := chunk.SmallBlock.Address
-	end := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
-	newChecksum := crypt.CRC16_CCITT(savefile[start:end])
+	checksumDataSize := uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
+	newChecksum := crypt.CRC16_CCITT(savefile.Get(start, checksumDataSize))
 
-	binary.LittleEndian.PutUint16(savefile[end+18:], newChecksum)
+	binary.LittleEndian.PutUint16(savefile.Get(start+checksumDataSize+0x12, 2), newChecksum)
 }

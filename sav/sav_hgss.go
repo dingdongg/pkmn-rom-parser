@@ -17,7 +17,7 @@ func NewSavHGSS(savefile []byte) *savHGSS {
 	}
 }
 
-func (sav *savHGSS) GetChunk(offset uint) Chunk {
+func (sav *savHGSS) Chunk(offset uint) Chunk {
 	sbData := sav.data[0x0+offset : sav.smallBlockSize+offset-0x10]
 	sbFooter := sav.data[sav.smallBlockSize+offset-0x14 : sav.smallBlockSize+offset]
 	small := NewBlock(sbData, sbFooter, 0x0+offset)
@@ -35,8 +35,8 @@ func (sav *savHGSS) GetChunk(offset uint) Chunk {
 }
 
 func (sav *savHGSS) Validate() error {
-	firstChunk := sav.GetChunk(0x0)
-	secondChunk := sav.GetChunk(0x40000)
+	firstChunk := sav.Chunk(0x0)
+	secondChunk := sav.Chunk(0x40000)
 
 	if !firstChunk.IsValid() {
 		fmt.Println("First chunk invalid")
@@ -51,9 +51,9 @@ func (sav *savHGSS) Validate() error {
 	return nil
 }
 
-func (sav *savHGSS) GetLatestData() *Chunk {
-	chunk1 := sav.GetChunk(0x0)
-	chunk2 := sav.GetChunk(0x40000)
+func (sav *savHGSS) LatestData() *Chunk {
+	chunk1 := sav.Chunk(0x0)
+	chunk2 := sav.Chunk(0x40000)
 
 	var latestSmallBlock Block
 	if chunk1.SmallBlock.Footer.SaveNumber >= chunk2.SmallBlock.Footer.SaveNumber {
@@ -75,10 +75,22 @@ func (sav *savHGSS) GetLatestData() *Chunk {
 	}
 }
 
-func (sav *savHGSS) GetPartySection() []byte {
+func (sav *savHGSS) PartySection() []byte {
 	return sav.data[sav.partyOffset:]
 }
 
-func (sav *savHGSS) GetPartySize() uint32 {
+func (sav *savHGSS) PartySize() uint32 {
 	return binary.LittleEndian.Uint32(sav.data[sav.partyOffset-4 : sav.partyOffset])
+}
+
+func (sav *savHGSS) PartyOffset() uint {
+	return sav.partyOffset
+}
+
+func (sav *savHGSS) Get(start uint, numBytes uint) []byte {
+	return sav.data[start : start+numBytes]
+}
+
+func (sav *savHGSS) Data() []byte {
+	return sav.data
 }
