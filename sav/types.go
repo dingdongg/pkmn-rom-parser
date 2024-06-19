@@ -12,8 +12,8 @@ const PLAT_SB_END uint = uint(0xCF2C) // non-inclusive
 const PLAT_BB_START uint = PLAT_SB_END + 0x0
 const PLAT_BB_END uint = PLAT_BB_START + 0x121E4 // non-inclusive
 
-const HGSS_SB_END uint = uint(0xF628) // non-inclusive
-const HGSS_BB_START uint = HGSS_SB_END + 0xD8 // padding included in hgss
+const HGSS_SB_END uint = uint(0xF628)            // non-inclusive
+const HGSS_BB_START uint = HGSS_SB_END + 0xD8    // padding included in hgss
 const HGSS_BB_END uint = HGSS_BB_START + 0x12310 // non-inclusive
 
 type Chunk struct {
@@ -48,7 +48,7 @@ func getFooter(buf []byte) Footer {
 }
 
 func NewBlock(data []byte, footer []byte, startAddr uint) Block {
-	return Block{ data, getFooter(footer), startAddr }
+	return Block{data, getFooter(footer), startAddr}
 }
 
 func (b Block) String() string {
