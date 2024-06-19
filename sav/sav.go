@@ -1,6 +1,7 @@
 package sav
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/consts/gamever"
@@ -11,14 +12,15 @@ type ISave interface {
 	Validate() error
 	GetLatestData() *Chunk
 	GetPartySection() []byte
+	GetPartySize() uint32
 }
 
 type gen4Savefile struct {
-	version gamever.GameVer
-	data []byte
+	version        gamever.GameVer
+	data           []byte
 	smallBlockSize uint
-	bigBlockSize uint
-	partyOffset uint
+	bigBlockSize   uint
+	partyOffset    uint
 }
 
 // tODO: include important offsets as fields
@@ -27,26 +29,26 @@ type savHGSS gen4Savefile
 
 func NewSavPLAT(savefile []byte) *savPLAT {
 	return &savPLAT{
-		version: 		gamever.PLAT,
-		data: 			savefile,
+		version:        gamever.PLAT,
+		data:           savefile,
 		smallBlockSize: 0xCF2C,
-		bigBlockSize: 	0x121E4,
-		partyOffset: 	0xA0,
+		bigBlockSize:   0x121E4,
+		partyOffset:    0xA0,
 	}
 }
 
 func (sav *savPLAT) GetChunk(offset uint) Chunk {
 	sbData := sav.data[0x0+offset : sav.smallBlockSize+offset-0x14]
 	sbFooter := sav.data[sav.smallBlockSize+offset-0x14 : sav.smallBlockSize+offset]
-	small := NewBlock(sbData, sbFooter, 0x0 + offset)
+	small := NewBlock(sbData, sbFooter, 0x0+offset)
 
 	bbData := sav.data[sav.smallBlockSize+offset : sav.smallBlockSize+offset+sav.bigBlockSize-0x14]
 	bbFooter := sav.data[sav.smallBlockSize+offset+sav.bigBlockSize-0x14 : sav.smallBlockSize+offset+sav.bigBlockSize]
-	big := NewBlock(bbData, bbFooter, sav.smallBlockSize + offset)
+	big := NewBlock(bbData, bbFooter, sav.smallBlockSize+offset)
 
 	return Chunk{
-		SmallBlock: small, 
-		BigBlock: big,
+		SmallBlock: small,
+		BigBlock:   big,
 	}
 }
 
@@ -95,30 +97,34 @@ func (sav *savPLAT) GetPartySection() []byte {
 	return sav.data[sav.partyOffset:]
 }
 
+func (sav *savPLAT) GetPartySize() uint32 {
+	return binary.LittleEndian.Uint32(sav.data[sav.partyOffset-4 : sav.partyOffset])
+}
+
 func NewSavHGSS(savefile []byte) *savHGSS {
 	return &savHGSS{
-		version: 		gamever.HGSS,
-		data: 			savefile,
+		version:        gamever.HGSS,
+		data:           savefile,
 		smallBlockSize: 0xF628,
-		bigBlockSize: 	0x12310,
-		partyOffset:  	0x98,
+		bigBlockSize:   0x12310,
+		partyOffset:    0x98,
 	}
 }
 
 func (sav *savHGSS) GetChunk(offset uint) Chunk {
 	sbData := sav.data[0x0+offset : sav.smallBlockSize+offset-0x10]
 	sbFooter := sav.data[sav.smallBlockSize+offset-0x14 : sav.smallBlockSize+offset]
-	small := NewBlock(sbData, sbFooter, 0x0 + offset)
+	small := NewBlock(sbData, sbFooter, 0x0+offset)
 
 	padding := uint(0xD8)
 	bbStart := sav.smallBlockSize + padding
 	bbData := sav.data[bbStart+offset : bbStart+offset+sav.bigBlockSize-0x10]
 	bbFooter := sav.data[bbStart+offset+sav.bigBlockSize-0x14 : bbStart+offset+sav.bigBlockSize]
-	big := NewBlock(bbData, bbFooter, bbStart + offset)
+	big := NewBlock(bbData, bbFooter, bbStart+offset)
 
 	return Chunk{
-		SmallBlock: small, 
-		BigBlock: big,
+		SmallBlock: small,
+		BigBlock:   big,
 	}
 }
 
@@ -165,6 +171,10 @@ func (sav *savHGSS) GetLatestData() *Chunk {
 
 func (sav *savHGSS) GetPartySection() []byte {
 	return sav.data[sav.partyOffset:]
+}
+
+func (sav *savHGSS) GetPartySize() uint32 {
+	return binary.LittleEndian.Uint32(sav.data[sav.partyOffset-4 : sav.partyOffset])
 }
 
 func Validate(savefile []byte) (ISave, error) {
