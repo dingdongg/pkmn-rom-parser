@@ -3,6 +3,7 @@ package consts
 const BLOCK_SIZE_BYTES = 32
 const PARTY_POKEMON_SIZE = 236
 const PERSONALITY_OFFSET = 0xA0
+const PERSONALITY_OFFSET_HGSS = 0x98
 
 const (
 	BLOCK_A_ITEM = 0x2
