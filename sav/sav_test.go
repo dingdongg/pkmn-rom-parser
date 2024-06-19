@@ -44,7 +44,7 @@ func TestPlatHGSS(t *testing.T) {
 }
 
 func TestArbitrarySavefile(t *testing.T) {
-	f,err := os.ReadFile("./../savefiles/soulsilver.sav")
+	f, err := os.ReadFile("./../savefiles/soulsilver.sav")
 
 	if err != nil {
 		t.Fatal("error opening HGSS savefile")
@@ -58,16 +58,16 @@ func TestArbitrarySavefile(t *testing.T) {
 
 	if chunk1.SmallBlock.Footer.K == consts.MAGIC_TIMESTAMP_JP_INTL {
 		t.Fatalf(
-			"shouldn't equal 0x%x but got 0x%x\n", 
-			consts.MAGIC_TIMESTAMP_JP_INTL, 
+			"shouldn't equal 0x%x but got 0x%x\n",
+			consts.MAGIC_TIMESTAMP_JP_INTL,
 			chunk1.SmallBlock.Footer.K,
 		)
 	}
 
 	if chunk2.SmallBlock.Footer.K == consts.MAGIC_TIMESTAMP_JP_INTL {
 		t.Fatalf(
-			"shouldn't equal 0x%x but got 0x%x\n", 
-			consts.MAGIC_TIMESTAMP_JP_INTL, 
+			"shouldn't equal 0x%x but got 0x%x\n",
+			consts.MAGIC_TIMESTAMP_JP_INTL,
 			chunk2.SmallBlock.Footer.K,
 		)
 	}
