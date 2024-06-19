@@ -13,8 +13,8 @@ func Parse(savefile []byte) ([]rom_reader.Pokemon, error) {
 		return []rom_reader.Pokemon{}, err
 	}
 
-	partyData := game.GetPartySection()
-	return rom_reader.GetPartyPokemon(partyData), nil
+	partyData := rom_reader.GetPartyPokemon(game.GetPartySection(), game.GetPartySize())
+	return partyData, nil
 }
 
 func Write(savefile []byte, newBytes []req.WriteRequest) ([]byte, error) {
