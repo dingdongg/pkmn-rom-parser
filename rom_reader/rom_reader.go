@@ -58,10 +58,10 @@ const (
 )
 
 // TODO: update function to use ISave methods instead
-func GetPartyPokemon(ciphertext []byte) []Pokemon {
+func GetPartyPokemon(ciphertext []byte, size uint32) []Pokemon {
 	var party []Pokemon
 
-	for i := uint(0); i < 6; i++ {
+	for i := uint(0); i < uint(size); i++ {
 		party = append(party, parsePokemon(ciphertext, i))
 	}
 
