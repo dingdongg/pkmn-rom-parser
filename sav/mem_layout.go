@@ -66,13 +66,12 @@ func (f Footer) String() string {
 
 func (c Chunk) IsValid() bool {
 	smallChecksum := crypt.CRC16_CCITT(c.SmallBlock.BlockData)
-	fmt.Println("checking small block checksum")
+	// fmt.Printf("smallblock: expected 0x%x, got 0x%x\n", c.SmallBlock.Footer.Checksum, smallChecksum)
 	if smallChecksum != c.SmallBlock.Footer.Checksum {
 		return false
 	}
-	fmt.Println("checking big block checksum")
 
 	bigChecksum := crypt.CRC16_CCITT(c.BigBlock.BlockData)
-	fmt.Println("success")
+	// fmt.Printf("bigblock: expected 0x%x, got 0x%x\n", c.BigBlock.Footer.Checksum, bigChecksum)
 	return bigChecksum == c.BigBlock.Footer.Checksum
 }
