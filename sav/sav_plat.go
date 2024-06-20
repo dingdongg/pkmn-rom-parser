@@ -74,11 +74,14 @@ func (sav *savPLAT) LatestData() *Chunk {
 }
 
 func (sav *savPLAT) PartySection() []byte {
-	return sav.data[sav.partyOffset:]
+	latest := sav.LatestData()
+	return sav.data[latest.SmallBlock.Address+sav.partyOffset:]
 }
 
 func (sav *savPLAT) PartySize() uint32 {
-	return binary.LittleEndian.Uint32(sav.data[sav.partyOffset-4 : sav.partyOffset])
+	latest := sav.LatestData()
+	offset := latest.SmallBlock.Address + sav.partyOffset
+	return binary.LittleEndian.Uint32(sav.data[offset-4 : offset])
 }
 
 func (sav *savPLAT) PartyOffset() uint {
