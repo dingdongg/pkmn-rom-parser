@@ -130,9 +130,10 @@ func UpdatePartyPokemon(savefile sav.ISave, newData []req.WriteRequest) ([]byte,
 
 func updateBlockChecksum(savefile sav.ISave) {
 	chunk := savefile.LatestData()
-	start := chunk.SmallBlock.Address
-	checksumDataSize := uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
-	newChecksum := crypt.CRC16_CCITT(savefile.Get(start, checksumDataSize))
+	newChecksum := crypt.CRC16_CCITT(chunk.SmallBlock.BlockData)
 
-	binary.LittleEndian.PutUint16(savefile.Get(start+checksumDataSize+0x12, 2), newChecksum)
+	start := chunk.SmallBlock.Address + uint(chunk.SmallBlock.Footer.BlockSize) - 0x14
+	binary.LittleEndian.PutUint16(savefile.Get(start+0x12, 2), newChecksum)
+
+	fmt.Println(savefile.LatestData())
 }
