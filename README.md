@@ -2,7 +2,8 @@
 Application used to parse in-game information in generation IV/V Pokemon games.
 
 ## Currently supported games
-- Pokemon Platinum only (support for other games will be implemented in future releases)
+- Pokemon Platinum
+- Pokemon HeartGold/SoulSilver
 
 ## Features
 - Read/update party pokemon stats, including:
