@@ -550,6 +550,8 @@ var itemsTable [538]itemInfo = [538]itemInfo{
 	{"Enigma Stone", "HGSS"},
 }
 
+// TODO: add support for gen 5 items
+
 type mapValue struct {
 	Index uint
 	Exclusivity string

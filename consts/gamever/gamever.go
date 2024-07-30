@@ -6,4 +6,5 @@ const (
 	DP GameVer = iota
 	PLAT
 	HGSS
+	BW
 )

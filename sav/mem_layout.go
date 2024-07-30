@@ -39,6 +39,10 @@ func getFooter(buf []byte) Footer {
 }
 
 func NewBlock(data []byte, footer []byte, startAddr uint) Block {
+	if len(footer) == 0 {
+		// gen 5 savefile
+		return Block{data, Footer{}, startAddr}
+	}
 	return Block{data, getFooter(footer), startAddr}
 }
 
@@ -66,12 +70,12 @@ func (f Footer) String() string {
 
 func (c Chunk) IsValid() bool {
 	smallChecksum := crypt.CRC16_CCITT(c.SmallBlock.BlockData)
-	// fmt.Printf("smallblock: expected 0x%x, got 0x%x\n", c.SmallBlock.Footer.Checksum, smallChecksum)
+	fmt.Printf("smallblock: expected 0x%x, got 0x%x\n", c.SmallBlock.Footer.Checksum, smallChecksum)
 	if smallChecksum != c.SmallBlock.Footer.Checksum {
 		return false
 	}
 
 	bigChecksum := crypt.CRC16_CCITT(c.BigBlock.BlockData)
-	// fmt.Printf("bigblock: expected 0x%x, got 0x%x\n", c.BigBlock.Footer.Checksum, bigChecksum)
+	fmt.Printf("bigblock: expected 0x%x, got 0x%x\n", c.BigBlock.Footer.Checksum, bigChecksum)
 	return bigChecksum == c.BigBlock.Footer.Checksum
 }
