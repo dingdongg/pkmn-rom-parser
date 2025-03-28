@@ -5,7 +5,7 @@ pkmn-rom-parser
 
 dev/*
 
-main 
+main*
 results*
 
 sav/*_test.go
