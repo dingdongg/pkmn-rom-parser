@@ -71,7 +71,7 @@ func (wrb *WriteRequestBuilder) AddRequest(partyIndex uint) (req.WriteRequest, e
 }
 
 // TODO: update function to use ISave methods instead
-func UpdatePartyPokemon(savefile sav.ISave, newData []req.WriteRequest) ([]byte, error) {
+func UpdatePartyPokemon(savefile sav.Savefile, newData []req.WriteRequest) ([]byte, error) {
 	updatedPokemonIndexes := make(map[uint]bool, 0)
 
 	latestChunk := savefile.LatestData()
@@ -128,7 +128,7 @@ func UpdatePartyPokemon(savefile sav.ISave, newData []req.WriteRequest) ([]byte,
 	return savefile.Data(), nil
 }
 
-func updateBlockChecksum(savefile sav.ISave) {
+func updateBlockChecksum(savefile sav.Savefile) {
 	chunk := savefile.LatestData()
 	newChecksum := crypt.CRC16_CCITT(chunk.SmallBlock.BlockData)
 
