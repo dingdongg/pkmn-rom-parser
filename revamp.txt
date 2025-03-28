@@ -18,6 +18,9 @@ Savefile interface
 - update party pokemon(s)
 - commit unsaved changes to file
 
+concrete implementations
+- access to raw bytes for writebacks
+- create "pokemon objects" in heap? stack as member vars?
 
 
 Getting party pokemon
