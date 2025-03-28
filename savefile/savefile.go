@@ -27,25 +27,22 @@ type PlatSavefile struct {
 	partyPokemon []PokemonPtr
 }
 
-func NewPlatSavefile(bytes []byte) *PlatSavefile {
-	return &PlatSavefile{
-		rawBytes: bytes,
-		partyPokemon: make([]PokemonPtr, 0),
-	}
+type DpSavefile struct {
+	rawBytes []byte
+	partyPokemon []PokemonPtr
 }
 
-func (pt *PlatSavefile) PartyPokemon() []PokemonPtr {
-	return pt.partyPokemon
+type HgssSavefile struct {
+	rawBytes []byte
+	partyPokemon []PokemonPtr
 }
 
-func (pt *PlatSavefile) validate() error {
-	return nil
+type BwSavefile struct {
+	rawBytes []byte
+	partyPokemon []PokemonPtr
 }
 
-func (pt *PlatSavefile) Version() types.GameVersion {
-	return types.PLAT
-}
-
-func (pt *PlatSavefile) Flush() error {
-	return nil
+type B2W2Savefile struct {
+	rawBytes []byte
+	partyPokemon []PokemonPtr
 }
