@@ -1,5 +1,5 @@
 package gamever
-
+// **TODO**: DEPRACATE SOON
 type GameVer int
 
 const (
