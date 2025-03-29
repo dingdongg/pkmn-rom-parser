@@ -1,5 +1,12 @@
 package enums
 
+type Gender int
+const (
+	Male Gender = iota
+	Female 
+	Unknown
+)
+
 type GameVersion int
 
 const (
