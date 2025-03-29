@@ -1,19 +1,19 @@
 package savefile
 
-import "github.com/dingdongg/pkmn-rom-parser/v7/types"
+import "github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 
-
-type Pokemon struct {
-	Level int
-	Name string
-}
 
 type PokemonPtr *Pokemon
 
 type Savefile interface {
+	/*
+		1. Decrypt party pokemon section
+
+		2. Parse stream of bytes into pokemon data
+	*/
 	PartyPokemon() []PokemonPtr
 	Flush() error
-	Version() types.GameVersion
+	Version() enums.GameVersion
 	validate() error
 }
 
@@ -23,26 +23,26 @@ func NewSavefile(bytes []byte) Savefile {
 }
 
 type PlatSavefile struct {
-	rawBytes []byte
+	rawBytes     []byte
 	partyPokemon []PokemonPtr
 }
 
 type DpSavefile struct {
-	rawBytes []byte
+	rawBytes     []byte
 	partyPokemon []PokemonPtr
 }
 
 type HgssSavefile struct {
-	rawBytes []byte
+	rawBytes     []byte
 	partyPokemon []PokemonPtr
 }
 
 type BwSavefile struct {
-	rawBytes []byte
+	rawBytes     []byte
 	partyPokemon []PokemonPtr
 }
 
 type B2W2Savefile struct {
-	rawBytes []byte
+	rawBytes     []byte
 	partyPokemon []PokemonPtr
 }

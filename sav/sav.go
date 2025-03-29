@@ -1,14 +1,13 @@
 package sav
 
 import (
-	"github.com/dingdongg/pkmn-rom-parser/v7/types"
 	"github.com/dingdongg/pkmn-rom-parser/v7/consts/gamever"
 )
 
 type Savefile interface {
 	PartyPokemon() any
 	Flush() error
-	Version() types.GameVersion
+	Version() enums.GameVersion
 	validate() error
 }
 

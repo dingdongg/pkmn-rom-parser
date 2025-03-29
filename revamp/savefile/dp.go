@@ -1,10 +1,10 @@
 package savefile
+import "github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 
-import "github.com/dingdongg/pkmn-rom-parser/v7/types"
 
 func NewDpSavefile(bytes []byte) *DpSavefile {
 	return &DpSavefile{
-		rawBytes: bytes,
+		rawBytes:     bytes,
 		partyPokemon: make([]PokemonPtr, 0),
 	}
 }
@@ -17,8 +17,8 @@ func (dp *DpSavefile) validate() error {
 	return nil
 }
 
-func (dp *DpSavefile) Version() types.GameVersion {
-	return types.DP
+func (dp *DpSavefile) Version() enums.GameVersion {
+	return enums.DP
 }
 
 func (dp *DpSavefile) Flush() error {

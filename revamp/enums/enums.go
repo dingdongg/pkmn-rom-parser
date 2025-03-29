@@ -1,4 +1,4 @@
-package types
+package enums
 
 type GameVersion int
 
@@ -25,3 +25,33 @@ func (gv GameVersion) String() string {
 		return "unrecognized"
 	}
 }
+
+type Nature uint8
+
+const (
+	Hardy Nature = iota // inc. Attack
+	Lonely
+	Brave
+	Adamant
+	Naughty
+	Bold // inc. Defense
+	Docile
+	Relaxed
+	Impish
+	Lax
+	Timid // inc. Speed
+	Hasty
+	Serious
+	Jolly
+	Naive
+	Modest // inc. SpA
+	Mild
+	Quiet
+	Bashful
+	Rash
+	Calm // inc. SpD
+	Gentle
+	Sassy
+	Careful
+	Quirky
+)
