@@ -1,15 +1,19 @@
 package savefile
-import "github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+
+import (
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
+)
 
 
 func NewDpSavefile(bytes []byte) *DpSavefile {
 	return &DpSavefile{
 		rawBytes:     bytes,
-		partyPokemon: make([]PokemonPtr, 0),
+		partyPokemon: make([]*models.Pokemon, 0),
 	}
 }
 
-func (dp *DpSavefile) PartyPokemon() []PokemonPtr {
+func (dp *DpSavefile) PartyPokemon() []*models.Pokemon {
 	return dp.partyPokemon
 }
 

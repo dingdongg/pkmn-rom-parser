@@ -1,16 +1,19 @@
 package savefile
 
-import "github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+import (
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
+)
 
 
 func NewHgssSavefile(bytes []byte) *HgssSavefile {
 	return &HgssSavefile{
 		rawBytes:     bytes,
-		partyPokemon: make([]PokemonPtr, 0),
+		partyPokemon: make([]*models.Pokemon, 0),
 	}
 }
 
-func (hgss *HgssSavefile) PartyPokemon() []PokemonPtr {
+func (hgss *HgssSavefile) PartyPokemon() []*models.Pokemon {
 	return hgss.partyPokemon
 }
 

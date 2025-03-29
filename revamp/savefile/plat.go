@@ -8,29 +8,19 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
 )
 
-type Pokemon struct {
-	Name      string
-	Level     uint8
-	Exp       uint32
-	PokedexId uint16
-	Nature    enums.Nature
-}
-
 func NewPlatSavefile(bytes []byte) *PlatSavefile {
 	return &PlatSavefile{
 		rawBytes:     bytes,
-		partyPokemon: make([]PokemonPtr, 0),
+		partyPokemon: make([]*models.Pokemon, 0),
 	}
 }
 
 func printPokemonInfo(raw []byte) {
-	type Test struct {
-		field int
-	}
 	pid := binary.LittleEndian.Uint32(raw[0:4])
 	fmt.Printf("PID: 0x%08X\n", pid)
 	fmt.Printf("checksum: 0x%04X\n", raw[6:8])
@@ -57,7 +47,7 @@ func printPokemonInfo(raw []byte) {
 	fmt.Printf("name: '%s'\n", name)
 }
 
-func (pt *PlatSavefile) PartyPokemon() []PokemonPtr {
+func (pt *PlatSavefile) PartyPokemon() []*models.Pokemon {
 	partySize := binary.LittleEndian.Uint32(pt.rawBytes[0x9C:0xA0])
 	for i := range partySize {
 		offset := 0xA0 + i*236
