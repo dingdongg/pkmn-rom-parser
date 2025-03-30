@@ -1,6 +1,8 @@
 package savefile
 
 import (
+	"log"
+
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 )
@@ -19,6 +21,20 @@ type Savefile interface {
 
 func NewSavefile(bytes []byte) Savefile {
 	// savefile, err := identifyVersion(bytes)
+
+	/*
+	I don't like the idea of instantiating a savefile,
+	validating it, and then failing
+
+	flow should be:
+	1. identify type of game
+	2. validate that step 1 is correct
+	3. if correct, instantiate savefile for that game; otherwise go next 
+	*/
+	ret := NewPlatSavefile(bytes)
+	if err := ret.validate(); err != nil {
+		log.Fatal(err)
+	}
 	return NewPlatSavefile(bytes)
 }
 
