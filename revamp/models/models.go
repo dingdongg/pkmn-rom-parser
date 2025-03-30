@@ -18,6 +18,16 @@ type Stat[T any] struct {
 	Speed T
 }
 
+func (s Stat[T]) String() string {
+	ret :=             "|   Hp  | Attck | Dfnse | SpAtk | SpDef | Speed |\n"
+	ret +=             "-------------------------------------------------\n"
+	ret += fmt.Sprintf("|  %3d  | %3d   | %3d   | %3d   | %3d   | %3d   |\n", 
+					   s.Hp, s.Attack, s.Defense, s.SpeAttack, s.SpeDefense, s.Speed)
+	ret +=             "-------------------------------------------------\n"
+
+	return ret
+}
+
 type Move struct {
 	Id uint16
 	Name string
@@ -50,7 +60,10 @@ func (p *Pokemon) String() string {
 	ret += fmt.Sprintf("Nature:      %s\n", p.Nature) // turn this into string for logging purposes
 	ret += fmt.Sprintf("Ability:     '%s'\n", p.Ability)
 	ret += fmt.Sprintf("Held Item:   '%s'\n", p.HeldItem)
-	ret += fmt.Sprintf("Gender:      %d\n", p.Gender)
+	ret += fmt.Sprintf("Gender:      %s\n", p.Gender)
+	ret += fmt.Sprintf("----------------------- EV ----------------------\n%s\n", p.EV)
+	ret += fmt.Sprintf("----------------------- IV ----------------------\n%s\n", p.IV)
+	ret += fmt.Sprintf("------------------ Battle Stats -----------------\n%s\n", p.Battle)
 	ret += "-----\n"
 	return ret
 }
