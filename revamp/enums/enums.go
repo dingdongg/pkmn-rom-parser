@@ -1,8 +1,8 @@
 package enums
 
 const (
-	MAGIC_TS_JP_INTL = 0x20060623
-	MAGIC_TS_KR = 0x20070903
+	MAGIC_TS_JP_INTL uint32 = 0x20060623
+	MAGIC_TS_KR uint32 = 0x20070903
 )
 
 type Gender int
