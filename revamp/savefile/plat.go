@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
@@ -37,35 +36,12 @@ func u64(buf []byte, index int) uint64 {
 	return binary.LittleEndian.Uint64(buf[index : index+8])
 }
 
-func printBlock(buf []byte, w int) {
-	output := ""
-	buffer := make([]string, 0)
-
-	update := func() {
-		buffer = append(buffer, "\n")
-		output += strings.Join(buffer, " ")
-		buffer = make([]string, 0)
-	}
-
-	for i, b := range buf {
-		buffer = append(buffer, fmt.Sprintf("%02X", b))
-		if i % w == w - 1 {
-			update()
-		}
-	}
-	if len(buffer) != 0 {
-		update()
-	}
-	fmt.Println(output)
-}
-
 func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	offset := 0xA0 + index*236
 	raw := crypt.DecryptPokemon(pt.rawBytes[offset : offset+236])
 
 	blocks := shuffler.GetPokemonBlocks(raw)
 	a, b, c := blocks[0], blocks[1], blocks[2]
-	printBlock(a, 16)
 
 	rawName := c[:0x16]
 	name := ""
@@ -100,6 +76,12 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 		gender = enums.Unknown
 	}
 
+	/*
+	missing: 
+	- base stats
+	- alternate forms
+	- movesets
+	*/
 	return models.Pokemon{
 		Name: name,
 		PokedexId: u16(a, 0x0),
