@@ -2,9 +2,8 @@ package savefile
 
 import (
 	"encoding/binary"
-	"log"
+	"unicode/utf16"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
@@ -28,18 +27,15 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 	a, b, c := blocks[0], blocks[1], blocks[2]
 
 	rawName := c[:0x16]
-	name := ""
+	yer := make([]uint16, 0)
 	for i := 0; i < len(rawName); i += 2 {
 		code := u16(rawName, i)
-		if code == char.END_OF_STRING {
+		if code == 0xFFFF {
 			break
 		}
-		chr, err := char.Char(code)
-		if err != nil {
-			log.Fatal(err)
-		}
-		name += chr
+		yer = append(yer, code)
 	}
+	runes := utf16.Decode(yer)
 
 	battleStats := raw[0x88 : 0x88+0x64]
 
@@ -67,7 +63,7 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 	- movesets
 	*/
 	return models.Pokemon{
-		Name: name,
+		Name: string(runes),
 		PokedexId: u16(a, 0x0),
 		Exp: u32(a, 0x8),
 		Level: u8(battleStats, 0x4),
