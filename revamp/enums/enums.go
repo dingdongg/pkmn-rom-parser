@@ -12,6 +12,16 @@ const (
 	Unknown
 )
 
+func (g Gender) String() string {
+	if g == Male {
+		return "Male"
+	} else if g == Female {
+		return "Female"
+	} else {
+		return "Unknown"
+	}
+}
+
 type GameVersion int
 
 const (
