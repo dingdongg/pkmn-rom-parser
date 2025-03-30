@@ -8,8 +8,11 @@ import (
 
 type TODO struct{}
 
+type StatNumber interface {
+	uint | uint8 | uint16
+}
 
-type Stat[T any] struct {
+type Stat[T StatNumber] struct {
 	Hp T
 	Attack T
 	Defense T
@@ -32,6 +35,10 @@ type Move struct {
 	Id uint16
 	Name string
 	MaxPoints uint8
+}
+
+func (m Move) String() string {
+	return m.Name
 }
 
 type Pokemon struct {
@@ -78,10 +85,10 @@ A:
 - EXP
 
 B:
-- moveset + PP
+- moveset + PP ***
 - IV
 - gender
-- forms
+- forms ***
 
 C:
 - name
@@ -95,5 +102,5 @@ battle stats;
 
 
 from DB:
-- base stats
+- base stats ***
 */
