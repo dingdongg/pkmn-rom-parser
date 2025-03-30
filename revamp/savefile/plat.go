@@ -2,7 +2,6 @@ package savefile
 
 import (
 	"encoding/binary"
-	"fmt"
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
@@ -128,73 +127,12 @@ func (pt *PlatSavefile) PartyPokemon() []*models.Pokemon {
 	return pt.partyPokemon
 }
 
+/*
+this functino shsould be aimed at validating the internal pokemon data before flushing. 
+
+thus, validation should be an external function not tied to any concrete impl. of Savefile 
+*/
 func (pt *PlatSavefile) validate() error {
-	// just validate the latest block pair for now
-	/*
-	checksum validation
-	magic number in correct place 
-	
-	*/
-	sfOffset := 0xCF18
-	sf1, sf2 := sfOffset, sfOffset + 0x40000
-	sf1Count, sf2Count := sf1 + 0x4, sf2 + 0x4
-
-	// find latest 
-	var latestOffset int
-	countOne := binary.LittleEndian.Uint32(pt.rawBytes[sf1Count : sf1Count+0x4])
-	countTwo := binary.LittleEndian.Uint32(pt.rawBytes[sf2Count : sf2Count+0x4])
-
-	if countOne > countTwo {
-		latestOffset = sf1
-	} else if countOne < countTwo {
-		latestOffset = sf2
-	} else {
-		return fmt.Errorf("SB save counts are same? how do I handle this?")
-	}
-
-	// check magic number
-	magicNumOffset := latestOffset + 0xC
-	magicNum := binary.LittleEndian.Uint32(pt.rawBytes[magicNumOffset : magicNumOffset+0x4])
-
-	if magicNum != enums.MAGIC_TS_JP_INTL && magicNum != enums.MAGIC_TS_KR {
-		return fmt.Errorf("magic numbers invalid")
-	}
-
-	// SB checksum vlaidation
-	checksumOffset := latestOffset + 0x12
-	expected := binary.LittleEndian.Uint16(pt.rawBytes[checksumOffset : checksumOffset+0x2])
-	actual := crypt.CRC16_CCITT(pt.rawBytes[latestOffset-sfOffset : latestOffset])
-
-	if expected != actual {
-		return fmt.Errorf("[SMALL BLOCK] checksum mismatch: 0x%04X (expected), 0x%04X (actual)", expected, actual)
-	}
-
-	// big block validations
-	bigBlockCount := binary.LittleEndian.Uint32(pt.rawBytes[latestOffset : latestOffset+0x4])
-
-	bfOffset := 0x1F0FC
-	bf1, bf2 := bfOffset, bfOffset + 0x40000
-	var latestBigBlockAddr int
-	bf1Count := binary.LittleEndian.Uint32(pt.rawBytes[bf1 : bf1+0x4])
-	bf2Count := binary.LittleEndian.Uint32(pt.rawBytes[bf2 : bf2+0x4])
-
-	if bigBlockCount == bf1Count {
-		latestBigBlockAddr = bf1
-	} else if bigBlockCount == bf2Count {
-		latestBigBlockAddr = bf2
-	} else {
-		return fmt.Errorf("no big block match found")
-	}
-
-	bbSize := binary.LittleEndian.Uint32(pt.rawBytes[latestBigBlockAddr+0x8 : latestBigBlockAddr+0x8+0x4])
-	bbChecksumOffset := latestBigBlockAddr + 0x12
-	expected = binary.LittleEndian.Uint16(pt.rawBytes[bbChecksumOffset : bbChecksumOffset+0x2])
-	actual = crypt.CRC16_CCITT(pt.rawBytes[uint32(latestBigBlockAddr)-bbSize+0x14 : latestBigBlockAddr])
-
-	if expected != actual {
-		return fmt.Errorf("[BIG BLOCK] checksum mismatch: 0x%04X (expected), 0x%04X (actual)", expected, actual)
-	}
-
 	return nil
 }
 
@@ -203,5 +141,10 @@ func (pt *PlatSavefile) Version() enums.GameVersion {
 }
 
 func (pt *PlatSavefile) Flush() error {
+	if err := pt.validate(); err != nil {
+		return err
+	}
+
+	// flush that shit
 	return nil
 }
