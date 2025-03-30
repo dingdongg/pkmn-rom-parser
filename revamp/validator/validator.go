@@ -1,11 +1,20 @@
 package validator
 
-import "github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+import (
+	"encoding/binary"
+	"fmt"
+
+	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+)
 
 type bytes struct {
 	buf []byte
 }
 
+// should this also determine which part fo the save to return? latest vs. backup?
+// cuz right now were always reading whatever is at the beginning of the savefile,
+// regardless of whether it might be a backup or not
 func IdentifyGame(buf []byte) enums.GameVersion {
 	b := bytes{buf}
 
@@ -37,9 +46,57 @@ func (b bytes) checkHeartGoldSoulSilver() error {
 }
 
 func (b bytes) checkBlackWhite() error {
-	return nil
+	// if I want to be super thorough,
+
+	// I should check the mirror checksums against their originals
+	// - would require a mapping from OG -> mirror addresses
+	// THEN I can perform CRC16 CCITT on the checksum block to see if valid
+
+	// let's only do the second step, for now
+
+	cbOffset := 0x23F00
+	cbSize := 0x8C
+	checksumAddr := 0x23F9A
+
+	actual := crypt.CRC16_CCITT(b.buf[cbOffset : cbOffset+cbSize])
+	expected := binary.LittleEndian.Uint16(b.buf[checksumAddr : checksumAddr+0x2])
+
+	if actual == expected {
+		return nil
+	}
+
+	cbOffset += 0x24000
+	checksumAddr += 0x24000
+	actual = crypt.CRC16_CCITT(b.buf[cbOffset : cbOffset+cbSize])
+	expected = binary.LittleEndian.Uint16(b.buf[checksumAddr : checksumAddr+0x2])
+
+	if actual == expected {
+		return nil
+	}
+
+	return fmt.Errorf("both savefile sections invalid")
 }
 
 func (b bytes) checkBlack2White2() error {
-	return nil
+	cbOffset := 0x25F00
+	cbSize := 0x93
+	checksumAddr := 0x25FA2
+
+	actual := crypt.CRC16_CCITT(b.buf[cbOffset : cbOffset+cbSize])
+	expected := binary.LittleEndian.Uint16(b.buf[checksumAddr : checksumAddr+0x2])
+
+	if actual == expected {
+		return nil
+	}
+
+	cbOffset += 0x26000
+	checksumAddr += 0x26000
+	actual = crypt.CRC16_CCITT(b.buf[cbOffset : cbOffset+cbSize])
+	expected = binary.LittleEndian.Uint16(b.buf[checksumAddr : checksumAddr+0x2])
+
+	if actual == expected {
+		return nil
+	}
+
+	return fmt.Errorf("both savefile sections invalid")
 }
