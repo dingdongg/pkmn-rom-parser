@@ -30,6 +30,7 @@ const (
 	HGSS
 	BW
 	B2W2
+	INVALID
 )
 
 func (gv GameVersion) String() string {
