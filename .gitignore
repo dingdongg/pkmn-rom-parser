@@ -9,3 +9,5 @@ main*
 results*
 
 sav/*_test.go
+
+roms/*
