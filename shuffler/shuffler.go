@@ -1,8 +1,10 @@
 package shuffler
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/consts"
@@ -71,6 +73,26 @@ var unshuffleTable [24]blockOrder = [24]blockOrder{
 	{[4]uint{D, B, C, A}, [4]uint{D, B, C, A}}, // DBCA DBCA
 	{[4]uint{D, C, A, B}, [4]uint{C, D, B, A}}, // DCAB CDBA
 	{[4]uint{D, C, B, A}, [4]uint{D, C, B, A}}, // DCBA DCBA
+}
+
+func GetPokemonBlocks(buf []byte) ([4][]byte) {
+	handleErr := func (e error) {
+		if e != nil {
+			log.Fatal(e)
+		}
+	}
+
+	pid := binary.LittleEndian.Uint32(buf[0 : 4])
+
+	var blocks [4][]byte
+
+	for i := A; i <= D; i++ {
+		block, err := GetPokemonBlock(buf, uint(i), pid)
+		handleErr(err)
+		blocks[i] = block
+	}
+
+	return blocks
 }
 
 // Unless you need the offset address to the block, you want to use this function (NOT GetPokemonBlockLocation())
