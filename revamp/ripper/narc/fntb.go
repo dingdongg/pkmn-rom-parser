@@ -10,13 +10,13 @@ const FILENAMES_INCLUDED uint32 = 0x00_00_00_08
 
 type entryFNTB struct {
 	length uint8
-	name []byte // of size `length`
+	name   []byte // of size `length`
 }
 
 type FrameFNTB struct {
 	filenames uint32
-	unknown uint32
-	entries []entryFNTB
+	unknown   uint32
+	entries   []entryFNTB
 }
 
 func (fntb FrameFNTB) String() string {
@@ -26,7 +26,7 @@ func (fntb FrameFNTB) String() string {
 		ret += "  empty.\n"
 		return ret
 	}
-	
+
 	for i := 0; i < 4; i++ {
 		length, name := fntb.entries[i].length, fntb.entries[i].name
 		ret += fmt.Sprintf("entry %d\n  filename: '%s'\n", i, name[:length])
@@ -41,7 +41,7 @@ func newEntryFNTB(fntb []byte, start int) entryFNTB {
 
 	return entryFNTB{
 		length: length,
-		name: buffer,
+		name:   buffer,
 	}
 }
 
@@ -52,10 +52,10 @@ func newFrameFNTB(rom []byte, offset uint32, numFiles uint32) NitroFrame[FrameFN
 
 	fntbFrame := FrameFNTB{
 		filenames: utils.U32(fntb, 0),
-		unknown: utils.U32(fntb, 4),
-		entries: make([]entryFNTB, 0),
+		unknown:   utils.U32(fntb, 4),
+		entries:   make([]entryFNTB, 0),
 	}
-	
+
 	if fntbFrame.filenames == FILENAMES_INCLUDED {
 		// read entries
 		prevEntrySize := 0
@@ -64,11 +64,11 @@ func newFrameFNTB(rom []byte, offset uint32, numFiles uint32) NitroFrame[FrameFN
 			fntbFrame.entries = append(fntbFrame.entries, entry)
 			prevEntrySize = int(entry.length) + 1
 		}
-	} 
+	}
 
 	return NitroFrame[FrameFNTB]{
-		magic: frame[:4],
+		magic:     frame[:4],
 		frameSize: frameSize,
-		data: fntbFrame,
+		Data:      fntbFrame,
 	}
 }
