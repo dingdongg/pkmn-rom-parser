@@ -7,13 +7,17 @@ import (
 )
 
 type entryFATB struct {
-	start uint32
-	end   uint32
+	Start uint32
+	End   uint32
 }
 
 type FrameFATB struct {
 	numEntries uint32
 	entries    []entryFATB
+}
+
+func (fatb FrameFATB) Entry(index int) entryFATB {
+	return fatb.entries[index]
 }
 
 func (fatb FrameFATB) String() string {
@@ -22,7 +26,7 @@ func (fatb FrameFATB) String() string {
 
 	// show first 4 entries?
 	for i := range 4 {
-		start, end := fatb.entries[i].start, fatb.entries[i].end
+		start, end := fatb.entries[i].Start, fatb.entries[i].End
 		ret += fmt.Sprintf("entry %d\n  start=0x%08X\n  end  =0x%08X\n", i, start, end)
 	}
 
@@ -31,8 +35,8 @@ func (fatb FrameFATB) String() string {
 
 func newEntryFATB(fatb []byte, start int) entryFATB {
 	return entryFATB{
-		start: utils.U32(fatb, start),
-		end:   utils.U32(fatb, start+4),
+		Start: utils.U32(fatb, start),
+		End:   utils.U32(fatb, start+4),
 	}
 }
 

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 	"github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper/narc"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/walker"
 )
 
 
@@ -119,4 +121,123 @@ func RipPokemonData() {
 		pkmn := NewPokemon(yer, i*44)
 		fmt.Println(pkmn)
 	}
+}
+
+func RipMoveNames() {
+	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
+	f, err := os.ReadFile(path)
+
+	if err != nil {
+		panic(err)
+	}
+
+	narcFile := narc.NewNarcFile(f, 0x0162DE00)
+	moveFileMetadata := narcFile.FrameFATB.Data.Entry(648)
+
+	// offsets are relative to start of FIMG buffer
+	size := moveFileMetadata.End - moveFileMetadata.Start + 1
+	fmt.Printf("moves name offset: 0x%08X, size=0x%08X\n", moveFileMetadata.Start, size)
+	// yer := narcFile.FrameFIMG.Data.Data
+	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start : moveFileMetadata.End]
+	// fmt.Println(buf)
+
+	decryptFile := func(buffer []byte) {
+		w := walker.NewWalker(buffer)
+		num, seed := w.U16(), w.U16()
+
+		offsets := make([]uint32, num)
+		sizes := make([]uint32, num)
+
+		// num * len(sizes) == num * num?
+		// https://projectpokemon.org/rawdb/platinum/formats/msg.php
+		binaryStrings := make([][]uint16, 0)
+		for range num {
+			binaryStrings = append(binaryStrings, make([]uint16, num))
+		}
+
+		texts := make([]string, num)
+
+		// generate offsets & sizes
+		for i := uint16(1); i <= num; i++ {
+			seedMult := seed * i
+			key := uint32(((seedMult*0x02FD) & 0xFFFF)) | ((uint32(seedMult)*0x02FD0000) & 0xFFFF0000)
+			offsets[i - 1] = w.U32() ^ key
+			sizes[i - 1] = w.U32() ^ key
+		}
+
+		for i := uint16(1); i <= num; i++ {
+			off := &offsets[i - 1]
+			sz := &sizes[i - 1]
+			bString := binaryStrings[i - 1]
+			key := (uint32(0x91BD3)*uint32(i)) & 0x0000FFFF
+			txt := &texts[i - 1]
+
+			w.Seek(int(*off))
+
+			for j := uint32(1); j <= *sz; j++ {
+				bString[j] = w.U16() ^ uint16(key)
+				key = (key+0x493D) & 0xFFFF
+			}
+
+			if bString[0] == 0xF100 {
+				// decompress from 9-bit strings to 16-bits
+				newString := make([]uint16, 1)
+				newString[0] = 0x0000
+				bString = bString[:len(bString)-1] // pop()
+				container, bit := uint16(0), uint16(0)
+
+				for len(bString) != 0 {
+					lastChar := bString[len(bString)-1]
+					bString = bString[:len(bString)-1]
+					container |= lastChar << bit
+
+					for bit >= 9 {
+						bit -= 9
+						newString = append(newString, container & 0x01FF)
+						container >>= 9
+					}
+				}
+				binaryStrings[i - 1] = newString
+				*sz = uint32(len(newString))
+			}
+
+			*txt = ""
+			bString = binaryStrings[i - 1]
+			for len(bString) != 0 {
+				lastChar := bString[len(bString)-1]
+				bString = bString[:len(bString)-1] // pop()
+				
+				if lastChar == 0xFFFF {
+					break
+				} else if lastChar == 0xFFFE {
+					c := bString[len(bString)-1]
+					bString = bString[:len(bString)-1]
+					args := []uint16{ 0x0000 }
+					for k := uint16(1); k <= c; k++ {
+						args = append(args, bString[len(bString)-1])
+						bString = bString[:len(bString)-1]
+					}
+
+					for _, a := range args {
+						converted, err := char.Char(a)
+						if err != nil {
+							fmt.Println("unrecognized character")
+							os.Exit(1)
+						}
+						*txt += converted
+					}
+				} else {
+					c, err := char.Char(lastChar)
+					if err != nil {
+						fmt.Println("unrecognized character!!!!!")
+					}
+					*txt += c
+				}
+			}
+		}
+
+		fmt.Println("output:\n", texts)
+	}
+
+	decryptFile(buf)
 }
