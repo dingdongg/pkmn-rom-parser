@@ -40,14 +40,19 @@ type PokemonMetadata struct {
 func (pm PokemonMetadata) String() string {
 	ret := "========================\n=== Pokemon Metadata ===\n========================\n"
 	ret += fmt.Sprintf("Gender threshold: %d\n", pm.GenderThreshold)
-	ret += fmt.Sprintf("Growth type: %d\n", pm.GrowthType)
-	ret += fmt.Sprintf("Types: %s  |  %s\n", enums.PokemonType(pm.Type1), enums.PokemonType(pm.Type2))
+	ret += fmt.Sprintf("Growth type:      %d\n", pm.GrowthType)
+	t1, t2 := enums.PokemonType(pm.Type1), enums.PokemonType(pm.Type2)
+	if t1 == t2 {
+		ret += fmt.Sprintf("Type:\t\t  %s\n", t1)
+	} else {
+		ret += fmt.Sprintf("Types:\t\t  %s | %s\n", enums.PokemonType(pm.Type1), enums.PokemonType(pm.Type2))
+	}
 	a1, _ := data.GetAbility(uint(pm.Ability1))
 	a2, _ := data.GetAbility(uint(pm.Ability2))
-	ret += fmt.Sprintf("Ability 1: '%s'\n", a1)
-	ret += fmt.Sprintf("Ability 2: '%s'\n", a2)
-	ret += fmt.Sprintf("------------- Base Stats -------------\n%s\n", pm.Base)
-	ret += fmt.Sprintf("-------------- EV Yield -------------\n%s\n", pm.EVYield)
+	ret += fmt.Sprintf("Ability 1:        '%s'\n", a1)
+	ret += fmt.Sprintf("Ability 2:        '%s'\n\n", a2)
+	ret += fmt.Sprintf("------------------- Base Stats ------------------\n%s\n", pm.Base)
+	ret += fmt.Sprintf("-------------------- EV Yield -------------------\n%s\n", pm.EVYield)
 	
 	return ret
 }
