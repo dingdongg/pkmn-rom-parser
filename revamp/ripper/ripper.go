@@ -132,7 +132,7 @@ func RipMoveNames() {
 	}
 
 	narcFile := narc.NewNarcFile(f, 0x0162DE00)
-	moveFileMetadata := narcFile.FrameFATB.Data.Entry(648)
+	moveFileMetadata := narcFile.FrameFATB.Data.Entry(647)
 
 	// offsets are relative to start of FIMG buffer
 	size := moveFileMetadata.End - moveFileMetadata.Start + 1
@@ -152,7 +152,7 @@ func RipMoveNames() {
 		// https://projectpokemon.org/rawdb/platinum/formats/msg.php
 		binaryStrings := make([][]uint16, 0)
 		for range num {
-			binaryStrings = append(binaryStrings, make([]uint16, num))
+			binaryStrings = append(binaryStrings, make([]uint16, 0))
 		}
 
 		texts := make([]string, num)
@@ -175,11 +175,12 @@ func RipMoveNames() {
 			w.Seek(int(*off))
 
 			for j := uint32(1); j <= *sz; j++ {
-				bString[j] = w.U16() ^ uint16(key)
+				bString = append(bString, w.U16() ^ uint16(key))
 				key = (key+0x493D) & 0xFFFF
 			}
 
 			if bString[0] == 0xF100 {
+				fmt.Println("de-compressing")
 				// decompress from 9-bit strings to 16-bits
 				newString := make([]uint16, 1)
 				newString[0] = 0x0000
@@ -202,13 +203,16 @@ func RipMoveNames() {
 			}
 
 			*txt = ""
-			bString = binaryStrings[i - 1]
+			textStack := make([]string, 0)
+			// TODO: instead of iterating from the back, we 
+			// could just iterate normally...
 			for len(bString) != 0 {
 				lastChar := bString[len(bString)-1]
 				bString = bString[:len(bString)-1] // pop()
 				
 				if lastChar == 0xFFFF {
-					break
+					// break <-- will discard every string we look at
+					continue
 				} else if lastChar == 0xFFFE {
 					c := bString[len(bString)-1]
 					bString = bString[:len(bString)-1]
@@ -224,15 +228,25 @@ func RipMoveNames() {
 							fmt.Println("unrecognized character")
 							os.Exit(1)
 						}
-						*txt += converted
+						textStack = append(textStack, converted)
 					}
 				} else {
+					// fmt.Printf("lastChar: 0x%04X\n", lastChar)
 					c, err := char.Char(lastChar)
 					if err != nil {
-						fmt.Println("unrecognized character!!!!!")
+						fmt.Printf("unrecognized character!!!!! 0x%04X\n", lastChar)
 					}
-					*txt += c
+					textStack = append(textStack, c)
 				}
+			}
+
+			// reverse stack and push into txt buffer
+			// can be removed once iteration direction
+			// of above loop is reversed
+			k := len(textStack) - 1
+			for k > -1 {
+				*txt += textStack[k]
+				k -= 1
 			}
 		}
 
