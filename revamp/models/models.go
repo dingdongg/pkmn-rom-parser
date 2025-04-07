@@ -21,6 +21,30 @@ type Stat[T StatNumber] struct {
 	Speed T
 }
 
+func statStringHeader(title string) string {
+	statLogWidth := 49 // 7*6 + 7 == 49
+	numDashes := statLogWidth - len(title) - 2 // extra space on either side of title
+	output := ""
+	firstHalfWidth := numDashes >> 1
+	// prepend dashes to title
+	for range firstHalfWidth {
+		output += "-"
+	}
+	output += fmt.Sprintf(" %s ", title)
+	// append dashes to title
+	for range (numDashes - firstHalfWidth) {
+		output += "-"
+	}
+
+	return output
+}
+
+func (s Stat[T]) Print(title string) string {
+	header := statStringHeader(title)
+	ret := header
+	return fmt.Sprintf("%s\n%s\n", ret, s)
+}
+
 func (s Stat[T]) String() string {
 	ret :=             "|   Hp  | Attck | Dfnse | SpAtk | SpDef | Speed |\n"
 	ret +=             "-------------------------------------------------\n"
@@ -68,9 +92,9 @@ func (p *Pokemon) String() string {
 	ret += fmt.Sprintf("Ability:     '%s'\n", p.Ability)
 	ret += fmt.Sprintf("Held Item:   '%s'\n", p.HeldItem)
 	ret += fmt.Sprintf("Gender:      %s\n", p.Gender)
-	ret += fmt.Sprintf("----------------------- EV ----------------------\n%s\n", p.EV)
-	ret += fmt.Sprintf("----------------------- IV ----------------------\n%s\n", p.IV)
-	ret += fmt.Sprintf("------------------ Battle Stats -----------------\n%s\n", p.Battle)
+	ret += p.EV.Print("EV")
+	ret += p.IV.Print("IV")
+	ret += p.Battle.Print("Battle Stats")
 	ret += "-----\n"
 	return ret
 }

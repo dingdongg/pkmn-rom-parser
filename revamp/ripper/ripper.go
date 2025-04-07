@@ -53,9 +53,8 @@ func (pm PokemonMetadata) String() string {
 	a2, _ := data.GetAbility(uint(pm.Ability2))
 	ret += fmt.Sprintf("Ability 1:        '%s'\n", a1)
 	ret += fmt.Sprintf("Ability 2:        '%s'\n\n", a2)
-	ret += fmt.Sprintf("------------------- Base Stats ------------------\n%s\n", pm.Base)
-	ret += fmt.Sprintf("-------------------- EV Yield -------------------\n%s\n", pm.EVYield)
-	
+	ret += pm.Base.Print("Base Stats")
+	ret += pm.EVYield.Print("EV Yield")
 	return ret
 }
 
