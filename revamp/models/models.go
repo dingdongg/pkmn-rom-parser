@@ -62,7 +62,7 @@ type Move struct {
 }
 
 func (m Move) String() string {
-	return m.Name
+	return fmt.Sprintf("'%s'", m.Name)
 }
 
 type Pokemon struct {
@@ -92,6 +92,7 @@ func (p *Pokemon) String() string {
 	ret += fmt.Sprintf("Ability:     '%s'\n", p.Ability)
 	ret += fmt.Sprintf("Held Item:   '%s'\n", p.HeldItem)
 	ret += fmt.Sprintf("Gender:      %s\n", p.Gender)
+	ret += fmt.Sprintf("Moves:       %s\n", p.Moves)
 	ret += p.EV.Print("EV")
 	ret += p.IV.Print("IV")
 	ret += p.Battle.Print("Battle Stats")

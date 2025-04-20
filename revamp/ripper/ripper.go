@@ -122,7 +122,7 @@ func RipPokemonData() {
 	}
 }
 
-func RipMoveNames() {
+func RipMoveNames() []string {
 	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
 	f, err := os.ReadFile(path)
 
@@ -140,7 +140,7 @@ func RipMoveNames() {
 	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start : moveFileMetadata.End]
 	// fmt.Println(buf)
 
-	decryptFile := func(buffer []byte) {
+	decryptFile := func(buffer []byte) []string {
 		w := walker.NewWalker(buffer)
 		num, seed := w.U16(), w.U16()
 
@@ -249,8 +249,9 @@ func RipMoveNames() {
 			}
 		}
 
-		fmt.Println("output:\n", texts)
+		// fmt.Println("output:\n", texts)
+		return texts
 	}
 
-	decryptFile(buf)
+	return decryptFile(buf)
 }
