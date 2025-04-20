@@ -9,6 +9,7 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
 )
 
@@ -30,7 +31,7 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 	rawName := c[:0x16]
 	yer := make([]uint16, 0)
 	for i := 0; i < len(rawName); i += 2 {
-		code := u16(rawName, i)
+		code := utils.U16(rawName, i)
 		if code == 0xFFFF {
 			break
 		}
@@ -40,16 +41,16 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 
 	battleStats := raw[0x88 : 0x88+0x64]
 
-	ability, _ := data.GetAbility(uint(u8(a, 0xD)))
-	item, _ := data.GetItem(u16(a, 0x2))
+	ability, _ := data.GetAbility(uint(utils.U8(a, 0xD)))
+	item, _ := data.GetItem(utils.U16(a, 0x2))
 
-	ivBuffer := u32(b, 0x10)
+	ivBuffer := utils.U32(b, 0x10)
 	getIv := func(statIndex int) uint8 {
 		val := (ivBuffer >> (5*statIndex)) & 0x1F
 		return uint8(val)
 	}
 
-	genderByte := u8(b, 0x18)
+	genderByte := utils.U8(b, 0x18)
 	gender := enums.Male
 	if genderByte & 0b10 != 0 {
 		gender = enums.Female
@@ -60,7 +61,7 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 	moves := make([]models.Move, 0)
 	moveNames := ripper.RipMoveNamesGen5()
 	for i := range 0x4 {
-		id := u16(b, i*0x2)
+		id := utils.U16(b, i*0x2)
 		move := models.Move{
 			Id: id,
 			Name: moveNames[id],
@@ -76,21 +77,21 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 	*/
 	return models.Pokemon{
 		Name: string(runes),
-		PokedexId: u16(a, 0x0),
-		Exp: u32(a, 0x8),
-		Level: u8(battleStats, 0x4),
-		Nature: enums.Nature(u8(b, 0x19)),
+		PokedexId: utils.U16(a, 0x0),
+		Exp: utils.U32(a, 0x8),
+		Level: utils.U8(battleStats, 0x4),
+		Nature: enums.Nature(utils.U8(b, 0x19)),
 		Ability: ability,
 		HeldItem: item.Name,
 		Gender: gender,
 		Moves: moves,
 		EV: models.Stat[uint8]{
-			Hp: u8(a, 0x10),
-			Attack: u8(a, 0x11),
-			Defense: u8(a, 0x12),
-			SpeAttack: u8(a, 0x14),
-			SpeDefense: u8(a, 0x15),
-			Speed: u8(a, 0x13),
+			Hp: utils.U8(a, 0x10),
+			Attack: utils.U8(a, 0x11),
+			Defense: utils.U8(a, 0x12),
+			SpeAttack: utils.U8(a, 0x14),
+			SpeDefense: utils.U8(a, 0x15),
+			Speed: utils.U8(a, 0x13),
 		},
 		IV: models.Stat[uint8]{
 			Hp: getIv(0),
@@ -101,12 +102,12 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 			Speed: getIv(3),
 		},
 		Battle: models.Stat[uint16]{
-			Hp: u16(battleStats, 0x8),
-			Attack: u16(battleStats, 0xA),
-			Defense: u16(battleStats, 0xC),
-			SpeAttack: u16(battleStats, 0x10),
-			SpeDefense: u16(battleStats, 0x12),
-			Speed: u16(battleStats, 0xE),
+			Hp: utils.U16(battleStats, 0x8),
+			Attack: utils.U16(battleStats, 0xA),
+			Defense: utils.U16(battleStats, 0xC),
+			SpeAttack: utils.U16(battleStats, 0x10),
+			SpeDefense: utils.U16(battleStats, 0x12),
+			Speed: utils.U16(battleStats, 0xE),
 		},
 	}
 }
