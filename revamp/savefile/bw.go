@@ -8,6 +8,7 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
 )
 
@@ -56,6 +57,17 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 		gender = enums.Unknown
 	}
 
+	moves := make([]models.Move, 0)
+	moveNames := ripper.RipMoveNamesGen5()
+	for i := range 0x4 {
+		id := u16(b, i*0x2)
+		move := models.Move{
+			Id: id,
+			Name: moveNames[id],
+		}
+		moves = append(moves, move)
+	}
+
 	/*
 	missing: 
 	- base stats
@@ -71,6 +83,7 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 		Ability: ability,
 		HeldItem: item.Name,
 		Gender: gender,
+		Moves: moves,
 		EV: models.Stat[uint8]{
 			Hp: u8(a, 0x10),
 			Attack: u8(a, 0x11),
