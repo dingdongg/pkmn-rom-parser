@@ -192,7 +192,7 @@ func RipMoveNamesGen5() []string {
 
 				key := encChars.Peek()
 				for !encChars.Empty() {
-					val := ^(encChars.Pop() ^ key)
+					val := ^(encChars.Pop() ^ key) // have to negate the resulting value for some reason
 					decChars.Push(val)
 					key = ((key >> 3) | (key << 13)) & 0xFFFF
 				}
