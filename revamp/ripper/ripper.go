@@ -3,10 +3,12 @@ package ripper
 import (
 	"fmt"
 	"os"
+	"unicode/utf16"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 	"github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/dsa"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper/narc"
@@ -122,6 +124,107 @@ func RipPokemonData() {
 	}
 }
 
+func buf2D[T any](x uint16, y uint16) [][]T {
+	output := make([][]T, x)
+	for i := range output {
+		output[i] = make([]T, y)
+	}
+
+	return output
+}
+
+func RipMoveNamesGen5() []string {
+	path := path_resolver.GetRoot() + "/roms/white.nds"
+	f, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	narcFile := narc.NewNarcFile(f, 0x03471C00)
+	moveFileMetadata := narcFile.FrameFATB.Data.Entry(203)
+
+	size := moveFileMetadata.End - moveFileMetadata.Start + 1
+	fmt.Printf("moves name offset: 0x%08X, size=0x%08X\n", moveFileMetadata.Start, size)
+
+	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start : moveFileMetadata.End]
+
+	decryptFile := func(buffer []byte) []string {
+		w := walker.NewWalker(buffer)
+		numBlocks, numEntries := w.U16(), w.U16()
+		// filesize, zero := w.U32(), w.U32()
+		w.U32() // filesize, unused
+		w.U32() // zero, unused
+
+		blockOffsets := make([]uint32, numBlocks)
+		tableOffsets := buf2D[uint32](numBlocks, numEntries)
+		charCounts := buf2D[uint16](numBlocks, numEntries)
+		textFlags := buf2D[uint16](numBlocks, numEntries)
+
+		texts := make([][]string, numBlocks)
+		for i := range texts {
+			texts[i] = make([]string, numEntries) // technically this should be of length `numEntries`
+		}
+
+		for i := uint16(0); i < numBlocks; i++ {
+			blockOffsets[i] = w.U32()
+		}
+
+		for i := uint16(0); i < numBlocks; i++ {
+			w.Seek(int(blockOffsets[i]))
+
+			// blockSize := w.U32()
+			w.U32() // blockSize, unused
+			for j := uint16(0); j < numEntries; j++ {
+				tableOffsets[i][j] = w.U32()
+				charCounts[i][j] = w.U16()
+				textFlags[i][j] = w.U16()
+			}
+
+			for j := uint16(0); j < numEntries; j++ {
+				encChars := dsa.NewSliceStack[uint16]()
+				decChars := dsa.NewSliceStack[uint16]()
+				// string := texts[i][j]
+
+				w.Seek(int(blockOffsets[i]) + int(tableOffsets[i][j]))
+				for k := uint16(0); k < charCounts[i][j]; k++ {
+					encChars.Push(w.U16())
+				}
+
+				key := encChars.Peek()
+				for !encChars.Empty() {
+					val := ^(encChars.Pop() ^ key)
+					decChars.Push(val)
+					key = ((key >> 3) | (key << 13)) & 0xFFFF
+				}
+
+				charBuf := make([]uint16, 1)
+				for !decChars.Empty() {
+					charBuf[0] = decChars.Pop()
+					char := charBuf[0]
+					if char == 0xFFFF {
+						break // continue, like gen 4?
+					} else if char == 0xFFFE {
+						texts[i][j] += "\n"
+					} else if char == 0xF000 {
+						fmt.Println("NEED TO APPEND SPECIAL CHAR")
+						texts[i][j] += "😎"
+					} else {
+						res := string(utf16.Decode(charBuf))
+						texts[i][j] += res
+					}
+				}
+			}
+		}
+
+		// fmt.Println("output: ", texts)
+		// return make([]string, 0) // stub
+		return texts[0]
+	}
+
+	return decryptFile(buf)
+}
+
+// different for gen 5 ?
 func RipMoveNames() []string {
 	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
 	f, err := os.ReadFile(path)
