@@ -44,12 +44,14 @@ func (f Footer) Bytes() []byte {
 
 type Block struct {
 	data []byte
+	offset int
 	Footer Footer
 }
 
-func NewBlock(block []byte) *Block {
+func NewBlock(block []byte, offset int) *Block {
 	return &Block{
 		data: block[:len(block)-0x14],
+		offset: offset,
 		Footer: NewFooter(block),
 	}
 }
@@ -67,4 +69,8 @@ func (b *Block) Bytes() []byte {
 
 func (b *Block) Data() []byte {
 	return b.data
+}
+
+func (b *Block) Offset() int {
+	return b.offset
 }

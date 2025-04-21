@@ -2,10 +2,12 @@ package savefile
 
 import (
 	"log"
-
+	
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
+	// "os"
+	// "github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
@@ -26,11 +28,11 @@ func NewPlatSavefile(bytes []byte) *PlatSavefile {
 	}
 
 	return &PlatSavefile{
-		rawBytes:     bytes,
-		latestSave: latestBlock,
-		partyPokemon: make([]*models.Pokemon, 0),
+		rawBytes:     bytes,						// encrypted
+		latestSave: latestBlock,					// encrypted
+		partyPokemon: make([]*models.Pokemon, 0), 
 		moveNames: ripper.RipMoveNames(),
-		rawParty: make([]byte, 0),
+		rawParty: make([]byte, 0),					// decrypted
 	}
 }
 
@@ -225,11 +227,8 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 	}
 	B[0x18] = genderByte
 
-	length := len(p.Name)
-	if length > 10 { // 20 bytes + 2 bytes for string terminator == 22 bytes
-		length = 10
-	}
-
+	length := min(len(p.Name), 10)
+	utils.Memset(C, 0x0, 0x16, 0xFF)
 	for i := range length {
 		letter := string(p.Name[i])
 		code, err := char.Index(letter)
@@ -243,11 +242,11 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 	battleStatBuf[0x4] = p.Level
 
 	utils.WriteU16(battleStatBuf, 0x8, p.Battle.Hp)
-	utils.WriteU16(battleStatBuf, 0x9, p.Battle.Attack)
-	utils.WriteU16(battleStatBuf, 0xA, p.Battle.Defense)
-	utils.WriteU16(battleStatBuf, 0xB, p.Battle.Speed)
-	utils.WriteU16(battleStatBuf, 0xC, p.Battle.SpeAttack)
-	utils.WriteU16(battleStatBuf, 0xD, p.Battle.SpeDefense)
+	utils.WriteU16(battleStatBuf, 0xA, p.Battle.Attack)
+	utils.WriteU16(battleStatBuf, 0xC, p.Battle.Defense)
+	utils.WriteU16(battleStatBuf, 0xE, p.Battle.Speed)
+	utils.WriteU16(battleStatBuf, 0x10, p.Battle.SpeAttack)
+	utils.WriteU16(battleStatBuf, 0x12, p.Battle.SpeDefense)
 	/*
 	block A:
 		pokedex id
@@ -279,16 +278,23 @@ func (pt *PlatSavefile) Flush() error {
 		return err
 	}
 
-	// flush that shit
-	// for _, p := range pt.partyPokemon {
-	// 	ciphertext := crypt.EncryptPokemon(toBytes(p))
-	// 	// write `ciphertext` to apprpriate offset in savefile
-	// 	// update block footer checksums accordingly
-	// }
+	encryptedBuffer := make([]byte, 0)
 	for i, p := range pt.partyPokemon {
-		// update pt.rawParty with updated values
 		pt.updatePokemon(i, p)
+		offset := i*236
+		ciphertext := crypt.EncryptPokemon(pt.rawParty[offset : offset+236])
+		encryptedBuffer = append(encryptedBuffer, ciphertext...)
 	}
+
+	copy(pt.latestSave.Data()[0xA0:], encryptedBuffer)
+	// update footer checksum
+	newChecksum := crypt.CRC16_CCITT(pt.latestSave.Data())
+	pt.latestSave.Footer.Checksum = newChecksum
+
+	copy(pt.rawBytes[pt.latestSave.Offset():], pt.latestSave.Bytes())
+
 	// fuck i need to do checksums lol
+	// fullpath := path_resolver.GetRoot() + "/new-plat.sav"
+	// os.WriteFile(fullpath, pt.rawBytes, os.ModePerm)
 	return nil
 }

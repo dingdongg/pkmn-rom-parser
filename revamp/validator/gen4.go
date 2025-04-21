@@ -31,9 +31,9 @@ func validateBlock(b *block.Block) error {
 	which is allocated within the stack frame of the CALLING function
 */
 func getBlocks(savefile []byte, start, end uint) [2]*block.Block {
-	sb1 := block.NewBlock(savefile[start : end+1])
+	sb1 := block.NewBlock(savefile[start : end+1], 0x0)
 	start, end = start+0x40000, end+0x40000
-	sb2 := block.NewBlock(savefile[start : end+1])
+	sb2 := block.NewBlock(savefile[start : end+1], 0x40000)
 
 	return [2]*block.Block{ sb1, sb2 }
 }
