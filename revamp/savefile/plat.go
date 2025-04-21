@@ -1,7 +1,6 @@
 package savefile
 
 import (
-	"encoding/binary"
 	"log"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
@@ -11,19 +10,33 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator"
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
 )
 
 func NewPlatSavefile(bytes []byte) *PlatSavefile {
+	// find the latest savefile offset here and persist it as member variable
+	// assume that `bytes` is the full savefile (includes backup)
+	// include a new field that points to just the recent portion of the savefile
+	// to do this, we need to figure out which block is more "recent"
+	sbStart, sbEnd := uint(0x0), uint(0xCF2B)
+	latestBlock, err := validator.LatestSmallBlock(bytes, utils.NewRange(sbStart, sbEnd))
+	if err != nil {
+		log.Fatalln("invalid savefile")
+	}
+
 	return &PlatSavefile{
 		rawBytes:     bytes,
+		latestSave: latestBlock,
 		partyPokemon: make([]*models.Pokemon, 0),
+		moveNames: ripper.RipMoveNames(),
 	}
 }
 
 func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	offset := 0xA0 + index*236
-	raw := crypt.DecryptPokemon(pt.rawBytes[offset : offset+236])
+	savefile := pt.latestSave.Data()
+	raw := crypt.DecryptPokemon(savefile[offset : offset+236])
 
 	blocks := shuffler.GetPokemonBlocks(raw)
 	a, b, c := blocks[0], blocks[1], blocks[2]
@@ -62,12 +75,11 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	}
 
 	moves := make([]models.Move, 0)
-	moveNames := ripper.RipMoveNames()
 	for i := range 0x4 {
 		id := utils.U16(b, i*0x2)
 		move := models.Move{
 			Id: id,
-			Name: moveNames[id],
+			Name: pt.moveNames[id],
 		}
 		moves = append(moves, move)
 	}
@@ -116,7 +128,7 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 }
 
 func (pt *PlatSavefile) PartyPokemon() []*models.Pokemon {
-	partySize := int(binary.LittleEndian.Uint32(pt.rawBytes[0x9C:0xA0]))
+	partySize := int(utils.U32(pt.latestSave.Data(), 0xA0-0x4))
 	for i := range partySize {
 		pkmn := pt.parsePokemon(i)
 		pt.partyPokemon = append(pt.partyPokemon, &pkmn)	
@@ -124,6 +136,10 @@ func (pt *PlatSavefile) PartyPokemon() []*models.Pokemon {
 
 	return pt.partyPokemon
 }
+
+// func toBytes(p *models.Pokemon) []byte {
+// 	// pack p into its 236-byte memory representation in gen 4 games
+// }
 
 /*
 this functino shsould be aimed at validating the internal pokemon data before flushing. 
@@ -133,6 +149,19 @@ thus, validation should be an external function not tied to any concrete impl. o
 TODO: complete this function, and write the move parsing logic for all concrete savefiles
 */
 func (pt *PlatSavefile) validate() error {
+	/*
+	what does it mean to "validate" data before flushing?
+	- the party pokemon field will have new and old data
+	- checksum validation (has to be done again after flushing, though?)
+	
+	"Flushing data"
+	- for sake of simplicity, we can "pack" the entire party pokemon contents
+	  back into the savefile format.
+	- then we need to encrypt these changes and update checksums, and return the 
+	  updated savefile
+	
+	
+	*/
 	return nil
 }
 
@@ -146,5 +175,11 @@ func (pt *PlatSavefile) Flush() error {
 	}
 
 	// flush that shit
+	// for _, p := range pt.partyPokemon {
+	// 	ciphertext := crypt.EncryptPokemon(toBytes(p))
+	// 	// write `ciphertext` to apprpriate offset in savefile
+	// 	// update block footer checksums accordingly
+	// }
+
 	return nil
 }
