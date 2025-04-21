@@ -6,6 +6,7 @@ import (
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
 )
 
 type bytes struct {
@@ -34,15 +35,18 @@ func IdentifyGame(buf []byte) enums.GameVersion {
 }
 
 func (b bytes) checkDiamondPearl() error {
-	return validateGen4(b.buf, 0xC0EC, 0x1E2CC)
+	sbRange, bbRange := utils.NewRange[uint](0x0, 0xC0FF), utils.NewRange[uint](0xC100, 0x1E2DF)
+	return validateGen4(b.buf, sbRange, bbRange)
 }
 
 func (b bytes) checkPlatinum() error {
-	return validateGen4(b.buf, 0xCF18, 0x1F0FC)
+	sbRange, bbRange := utils.NewRange[uint](0x0, 0xCF2B), utils.NewRange[uint](0xCF2C, 0x1F10F)
+	return validateGen4(b.buf, sbRange, bbRange)
 }
 
 func (b bytes) checkHeartGoldSoulSilver() error {
-	return validateGen4(b.buf, 0xF614, 0x219FC)
+	sbRange, bbRange := utils.NewRange[uint](0x0, 0xF627), utils.NewRange[uint](0xF700, 0x21A0F)
+	return validateGen4(b.buf, sbRange, bbRange)
 }
 
 func (b bytes) checkBlackWhite() error {

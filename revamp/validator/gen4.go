@@ -1,70 +1,95 @@
 package validator
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator/block"
 )
 
-func validateGen4(buf []byte, sfOffset int, bfOffset int) error {
-	sf1, sf2 := sfOffset, sfOffset + 0x40000
-	sf1Count, sf2Count := sf1 + 0x4, sf2 + 0x4
-
-	var latestOffset int
-	countOne := binary.LittleEndian.Uint32(buf[sf1Count : sf1Count+0x4])
-	countTwo := binary.LittleEndian.Uint32(buf[sf2Count : sf2Count+0x4])
-
-	if countOne > countTwo {
-		latestOffset = sf1
-	} else if countOne < countTwo {
-		latestOffset = sf2
-	} else {
-		return fmt.Errorf("SB save counts are same? how do I handle this?")
+func validateBlock(b *block.Block) error {
+	timestamp := b.Footer.MagicTimestamp
+	if timestamp != enums.MAGIC_TS_JP_INTL && timestamp != enums.MAGIC_TS_KR {
+		return fmt.Errorf("magic number invalid")
 	}
 
-	magicNumOffset := latestOffset + 0xC
-	magicNum := binary.LittleEndian.Uint32(buf[magicNumOffset : magicNumOffset+0x4])
-
-	if magicNum != enums.MAGIC_TS_JP_INTL && magicNum != enums.MAGIC_TS_KR {
-		return fmt.Errorf("magic numbers invalid")
-	}
-
-	// SB checksum vlaidation
-	sbSize := binary.LittleEndian.Uint32(buf[latestOffset+0x8 : latestOffset+0x8+0x4])
-	checksumOffset := latestOffset + 0x12
-	expected := binary.LittleEndian.Uint16(buf[checksumOffset : checksumOffset+0x2])
-	actual := crypt.CRC16_CCITT(buf[uint32(latestOffset)-sbSize+0x14 : latestOffset])
-
+	// checksum validations
+	expected, actual := b.Footer.Checksum, crypt.CRC16_CCITT(b.Data())
 	if expected != actual {
-		return fmt.Errorf("[SMALL BLOCK] checksum mismatch: 0x%04X (expected), 0x%04X (actual)", expected, actual)
+		msg := "checksum mismatch: 0x%04X (expected), 0x%04X (actual)"
+		return fmt.Errorf(msg, expected, actual)
 	}
 
-	// big block validations
-	bigBlockCount := binary.LittleEndian.Uint32(buf[latestOffset : latestOffset+0x4])
+	return nil
+}
 
-	bf1, bf2 := bfOffset, bfOffset + 0x40000
-	var latestBigBlockAddr int
-	bf1Count := binary.LittleEndian.Uint32(buf[bf1 : bf1+0x4])
-	bf2Count := binary.LittleEndian.Uint32(buf[bf2 : bf2+0x4])
+/*
+	this functino may seem like it is returning a region of memory on the stack
+	(ie. a static array), but golang actually returns a copy of this static array
+	which is allocated within the stack frame of the CALLING function
+*/
+func getBlocks(savefile []byte, start, end uint) [2]*block.Block {
+	sb1 := block.NewBlock(savefile[start : end+1])
+	start, end = start+0x40000, end+0x40000
+	sb2 := block.NewBlock(savefile[start : end+1])
 
-	if bigBlockCount == bf1Count {
-		latestBigBlockAddr = bf1
-	} else if bigBlockCount == bf2Count {
-		latestBigBlockAddr = bf2
-	} else {
-		return fmt.Errorf("no big block match found")
+	return [2]*block.Block{ sb1, sb2 }
+}
+
+func LatestSmallBlock(savefile []byte, offsets utils.Range[uint]) (*block.Block, error) {
+	blocks := getBlocks(savefile, offsets.Start, offsets.End)
+	count1, count2 := blocks[0].Footer.SaveCount, blocks[1].Footer.SaveCount
+	if count1 < count2 {
+		// swap blocks
+		blocks[0], blocks[1] = blocks[1], blocks[0]
 	}
 
-	bbSize := binary.LittleEndian.Uint32(buf[latestBigBlockAddr+0x8 : latestBigBlockAddr+0x8+0x4])
-	bbChecksumOffset := latestBigBlockAddr + 0x12
-	expected = binary.LittleEndian.Uint16(buf[bbChecksumOffset : bbChecksumOffset+0x2])
-	actual = crypt.CRC16_CCITT(buf[uint32(latestBigBlockAddr)-bbSize+0x14 : latestBigBlockAddr])
-
-	if expected != actual {
-		return fmt.Errorf("[BIG BLOCK] checksum mismatch: 0x%04X (expected), 0x%04X (actual)", expected, actual)
+	var err error
+	for _, b := range blocks {
+		err = validateBlock(b)
+		if err == nil {
+			return b, nil
+		}
 	}
 
+	// this should be very unlikely (savefile is just giga fucked gg)
+	return nil, err
+}
+
+func LatestBigBlock(savefile []byte, offsets utils.Range[uint], bridgeNum uint32) (*block.Block, error) {
+	blocks := getBlocks(savefile, offsets.Start, offsets.End)
+	count1, count2 := blocks[0].Footer.SaveCount, blocks[1].Footer.SaveCount
+	if count2 == bridgeNum {
+		blocks[0], blocks[1] = blocks[1], blocks[0]
+	} else if count1 != bridgeNum {
+		return nil, fmt.Errorf("no big block match found")
+	}
+
+	var err error
+	for _, b := range blocks {
+		err = validateBlock(b)
+		if err == nil {
+			return b, nil
+		}
+	}
+
+	return nil, err
+}
+
+func validateGen4(buf []byte, sbRange utils.Range[uint], bbRange utils.Range[uint]) error {
+	// the LatestXXBlock() helpers validate the fetched blocks
+	latestSb, err := LatestSmallBlock(buf, sbRange)
+	if err != nil {
+		return err
+	}
+
+	_, err = LatestBigBlock(buf, bbRange, latestSb.Footer.Bridge)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Validation successful")
 	return nil
 }
