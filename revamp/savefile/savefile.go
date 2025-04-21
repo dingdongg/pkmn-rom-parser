@@ -41,6 +41,7 @@ type PlatSavefile struct {
 	latestSave   *block.Block
 	partyPokemon []*models.Pokemon
 	moveNames []string
+	rawParty []byte
 }
 
 type DpSavefile struct {

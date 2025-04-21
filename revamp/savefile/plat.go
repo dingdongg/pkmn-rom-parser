@@ -30,6 +30,7 @@ func NewPlatSavefile(bytes []byte) *PlatSavefile {
 		latestSave: latestBlock,
 		partyPokemon: make([]*models.Pokemon, 0),
 		moveNames: ripper.RipMoveNames(),
+		rawParty: make([]byte, 0),
 	}
 }
 
@@ -37,6 +38,7 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	offset := 0xA0 + index*236
 	savefile := pt.latestSave.Data()
 	raw := crypt.DecryptPokemon(savefile[offset : offset+236])
+	pt.rawParty = append(pt.rawParty, raw...)
 
 	blocks := shuffler.GetPokemonBlocks(raw)
 	a, b, c := blocks[0], blocks[1], blocks[2]
@@ -88,7 +90,6 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	missing: 
 	- base stats
 	- alternate forms
-	- movesets
 	*/
 	return models.Pokemon{
 		Name: name,
@@ -153,6 +154,9 @@ func (pt *PlatSavefile) validate() error {
 	what does it mean to "validate" data before flushing?
 	- the party pokemon field will have new and old data
 	- checksum validation (has to be done again after flushing, though?)
+	- check that the values in the party pokemon structs 
+	  conform to the numeric limits imposed by the game
+	  (ie. level cannot be greater than 100, valid move IDs, etc.)
 	
 	"Flushing data"
 	- for sake of simplicity, we can "pack" the entire party pokemon contents
@@ -169,6 +173,107 @@ func (pt *PlatSavefile) Version() enums.GameVersion {
 	return enums.PLAT
 }
 
+func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
+	start := index*236
+	buf := pt.rawParty[start : start+236]
+	pid := utils.U32(buf, 0)
+
+	a, _ := shuffler.GetPokemonBlockLocation(shuffler.A, pid)
+	b, _ := shuffler.GetPokemonBlockLocation(shuffler.B, pid)
+	c, _ := shuffler.GetPokemonBlockLocation(shuffler.C, pid)
+
+	A, B, C := buf[a : a+32], buf[b : b+32], buf[c : c+32]
+
+	utils.WriteU16(A, 0x0, p.PokedexId)
+	itemMap := data.GenerateItemMap()
+	if itemId, ok := itemMap[p.HeldItem]; ok {
+		utils.WriteU16(A, 0x2, uint16(itemId.Index))
+	}
+
+	utils.WriteU32(A, 0x8, p.Exp)
+
+	abilityMap := data.GenerateAbilityMap()
+	if ability, ok := abilityMap[p.Ability]; ok {
+		utils.WriteU16(A, 0xD, uint16(ability))
+	}
+
+	A[0x10] = p.EV.Hp
+	A[0x11] = p.EV.Attack
+	A[0x12] = p.EV.Defense
+	A[0x13] = p.EV.Speed
+	A[0x14] = p.EV.SpeAttack
+	A[0x15] = p.EV.SpeDefense
+
+	for i, move := range p.Moves {
+		utils.WriteU16(B, i*0x2, move.Id)
+	}
+
+	// pack IVs
+	var packedIv uint32 = utils.U32(B, 0x10) & 0xC0_00_00_00
+	packedIv |= uint32(p.IV.Hp & 0x1F) 
+	packedIv |= (uint32(p.IV.Attack & 0x1F) << 5) 
+	packedIv |= (uint32(p.IV.Defense & 0x1F) << 10) 
+	packedIv |= (uint32(p.IV.Speed & 0x1F) << 15) 
+	packedIv |= (uint32(p.IV.SpeAttack & 0x1F) << 20) 
+	packedIv |= (uint32(p.IV.SpeDefense & 0x1F) << 25) 
+	utils.WriteU32(B, 0x10, packedIv)
+
+	genderByte := B[0x18] & 0xF9
+	switch (p.Gender) {
+	case enums.Female: genderByte |= 0x02
+	case enums.Unknown: genderByte |= 0x04
+	}
+	B[0x18] = genderByte
+
+	length := len(p.Name)
+	if length > 10 { // 20 bytes + 2 bytes for string terminator == 22 bytes
+		length = 10
+	}
+
+	for i := range length {
+		letter := string(p.Name[i])
+		code, err := char.Index(letter)
+		if err != nil {
+			code = char.END_OF_STRING // append null terminator instead and stop
+		}
+		utils.WriteU16(C, i*0x2, code)
+	}
+
+	battleStatBuf := buf[0x88:]
+	battleStatBuf[0x4] = p.Level
+
+	utils.WriteU16(battleStatBuf, 0x8, p.Battle.Hp)
+	utils.WriteU16(battleStatBuf, 0x9, p.Battle.Attack)
+	utils.WriteU16(battleStatBuf, 0xA, p.Battle.Defense)
+	utils.WriteU16(battleStatBuf, 0xB, p.Battle.Speed)
+	utils.WriteU16(battleStatBuf, 0xC, p.Battle.SpeAttack)
+	utils.WriteU16(battleStatBuf, 0xD, p.Battle.SpeDefense)
+	/*
+	block A:
+		pokedex id
+		item id
+		ability id
+		EVs
+		EXP
+
+	block B:
+		moveset ids
+		IVs
+		gender bits
+		form byte?
+	
+	block C:
+		name
+
+	block D:
+		none
+
+	battle stats:
+		level
+		battle stats
+	*/
+}
+
 func (pt *PlatSavefile) Flush() error {
 	if err := pt.validate(); err != nil {
 		return err
@@ -180,6 +285,10 @@ func (pt *PlatSavefile) Flush() error {
 	// 	// write `ciphertext` to apprpriate offset in savefile
 	// 	// update block footer checksums accordingly
 	// }
-
+	for i, p := range pt.partyPokemon {
+		// update pt.rawParty with updated values
+		pt.updatePokemon(i, p)
+	}
+	// fuck i need to do checksums lol
 	return nil
 }
