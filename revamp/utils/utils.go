@@ -43,3 +43,19 @@ func U32(buf []byte, index int) uint32 {
 func U64(buf []byte, index int) uint64 {
 	return binary.LittleEndian.Uint64(buf[index : index+8])
 }
+
+func WriteU8(buf []byte, index int, val uint8) {
+	buf[index] = val
+}
+
+func WriteU16(buf []byte, index int, val uint16) {
+	binary.LittleEndian.PutUint16(buf[index : index+2], val)
+}
+
+func WriteU32(buf []byte, index int, val uint32) {
+	binary.LittleEndian.PutUint32(buf[index : index+4], val)
+}
+
+func WriteU64(buf []byte, index int, val uint64) {
+	binary.LittleEndian.PutUint64(buf[index : index+8], val)
+}
