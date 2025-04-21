@@ -59,3 +59,9 @@ func WriteU32(buf []byte, index int, val uint32) {
 func WriteU64(buf []byte, index int, val uint64) {
 	binary.LittleEndian.PutUint64(buf[index : index+8], val)
 }
+
+func Memset(buf []byte, from int, size int, val byte) {
+	for i := range size {
+		buf[i+from] = val
+	}
+}
