@@ -6,6 +6,7 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator/block"
 )
 
 type Savefile interface {
@@ -37,7 +38,9 @@ func NewSavefile(bytes []byte) Savefile {
 
 type PlatSavefile struct {
 	rawBytes     []byte
+	latestSave   *block.Block
 	partyPokemon []*models.Pokemon
+	moveNames []string
 }
 
 type DpSavefile struct {
