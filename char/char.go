@@ -22,7 +22,7 @@ func init() {
 func Char(index uint16) (string, error) {
 	if index == END_OF_STRING || index == NULL_CHAR || index >= uint16(len(chars)) {
 		// end of string
-		return "", errors.New("invalid index")
+		return "", errors.New("char.go: invalid index")
 	}
 
 	return chars[index], nil
