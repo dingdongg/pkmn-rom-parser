@@ -1,11 +1,13 @@
 package savefile
 
 import (
+	"fmt"
 	"log"
-	
+
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
+
 	// "os"
 	// "github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
@@ -140,14 +142,84 @@ func (pt *PlatSavefile) PartyPokemon() []*models.Pokemon {
 	return pt.partyPokemon
 }
 
-// func toBytes(p *models.Pokemon) []byte {
-// 	// pack p into its 236-byte memory representation in gen 4 games
-// }
+func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
+	newError := func(msg string, params ...any) error {
+		return fmt.Errorf(fmt.Sprint("VALIDATION ERR: ", msg), params)
+	}
+
+	if p.PokedexId > 493 {
+		return newError("invalid pokedex id %d", p.PokedexId)
+	}
+	itemMap := data.GenerateItemMap()
+	item, ok := itemMap[p.HeldItem]
+	if !ok {
+		return newError("invalid item '%s'", p.HeldItem)
+	} else if item.Exclusivity == "HGSS" {
+		return newError("item '%s' not supported in PLAT", p.HeldItem)
+	}
+
+	abilityMap := data.GenerateAbilityMap()
+	ability, ok := abilityMap[p.Ability]
+	if !ok {
+		return newError("invalid ability '%s'", p.Ability)
+	} else if ability > 123 {
+		return newError("ability '%s' not supported in PLAT", p.Ability)
+	}
+
+	// EV validation - nothign to do
+	// EXP validation - TODO
+	// check that exp is not over the maximum for its growth type
+
+	// moveset ID validation
+	for _, move := range p.Moves {
+		if move.Id > 467 {
+			return newError("invalid move '%s' (id=%d)", move.Name, move.Id)
+		}
+	}
+
+	// IV validation - nothing to do
+	// gender bit validation
+	if p.Gender.String() == "Unknown" {
+		return newError("invalid gender: %d", p.Gender)
+	}
+
+	// form validation - TODO after implementing support for forms
+
+	// name validation - length should be 10 characters max (excluding end-of-string terminator)
+	if len(p.Name) == 0 || len(p.Name) > 10 {
+		return newError("name must be between 1-10 characters long")
+	}
+
+	// level validation ?
+	if p.Level > 100 {
+		return newError("level %d is too big; cannot exceed 100", p.Level)
+	}
+
+	// battle stats validation
+	if p.Battle.Hp > 999 {
+		return newError("HP stat (=%d) cannot exceed 999", p.Battle.Hp)
+	}
+	if p.Battle.Attack > 999 {
+		return newError("ATTACK stat (=%d) cannot exceed 999", p.Battle.Attack)
+	}
+	if p.Battle.Defense > 999 {
+		return newError("DEFENSE stat (=%d) cannot exceed 999", p.Battle.Defense)
+	}
+	if p.Battle.SpeAttack > 999 {
+		return newError("SPECIAL ATK stat (=%d) cannot exceed 999", p.Battle.SpeAttack)
+	}
+	if p.Battle.SpeDefense > 999 {
+		return newError("SPECIAL DEF stat (=%d) cannot exceed 999", p.Battle.SpeDefense)
+	}
+	if p.Battle.Speed > 999 {
+		return newError("SPEED stat (=%d) cannot exceed 999", p.Battle.Speed)
+	}
+
+	return nil
+}
 
 /*
 this functino shsould be aimed at validating the internal pokemon data before flushing. 
-
-thus, validation should be an external function not tied to any concrete impl. of Savefile 
 
 TODO: complete this function, and write the move parsing logic for all concrete savefiles
 */
@@ -168,6 +240,18 @@ func (pt *PlatSavefile) validate() error {
 	
 	
 	*/
+	var err error
+
+	if len(pt.partyPokemon) > 6 {
+		return fmt.Errorf("VALIDATION ERR: party cannot hold more than 6 pokemon")
+	}
+	
+	for _, p := range pt.partyPokemon {
+		if err = pt.validatePokemon(p); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -293,7 +377,6 @@ func (pt *PlatSavefile) Flush() error {
 
 	copy(pt.rawBytes[pt.latestSave.Offset():], pt.latestSave.Bytes())
 
-	// fuck i need to do checksums lol
 	// fullpath := path_resolver.GetRoot() + "/new-plat.sav"
 	// os.WriteFile(fullpath, pt.rawBytes, os.ModePerm)
 	return nil
