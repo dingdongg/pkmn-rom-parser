@@ -177,7 +177,26 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 		}
 	}
 
-	// IV validation - nothing to do
+	// IV validation
+	if p.IV.Hp > 31 {
+		return newError("HP IV (=%d) cannot exceed 31", p.IV.Hp)
+	}
+	if p.IV.Attack > 31 {
+		return newError("ATTACK IV (=%d) cannot exceed 31", p.IV.Attack)
+	}
+	if p.IV.Defense > 31 {
+		return newError("DEFENSE IV (=%d) cannot exceed 31", p.IV.Defense)
+	}
+	if p.IV.SpeAttack > 31 {
+		return newError("SPECIAL ATK IV (=%d) cannot exceed 31", p.IV.SpeAttack)
+	}
+	if p.IV.SpeDefense > 31 {
+		return newError("SPECIAL DEF IV (=%d) cannot exceed 31", p.IV.SpeDefense)
+	}
+	if p.IV.Speed > 31 {
+		return newError("SPEED IV (=%d) cannot exceed 31", p.IV.Speed)
+	}
+
 	// gender bit validation
 	if p.Gender.String() == "Unknown" {
 		return newError("invalid gender: %d", p.Gender)
@@ -197,22 +216,22 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 
 	// battle stats validation
 	if p.Battle.Hp > 999 {
-		return newError("HP stat (=%d) cannot exceed 999", p.Battle.Hp)
+		return newError("HP battle stat (=%d) cannot exceed 999", p.Battle.Hp)
 	}
 	if p.Battle.Attack > 999 {
-		return newError("ATTACK stat (=%d) cannot exceed 999", p.Battle.Attack)
+		return newError("ATTACK battle stat (=%d) cannot exceed 999", p.Battle.Attack)
 	}
 	if p.Battle.Defense > 999 {
-		return newError("DEFENSE stat (=%d) cannot exceed 999", p.Battle.Defense)
+		return newError("DEFENSE battle stat (=%d) cannot exceed 999", p.Battle.Defense)
 	}
 	if p.Battle.SpeAttack > 999 {
-		return newError("SPECIAL ATK stat (=%d) cannot exceed 999", p.Battle.SpeAttack)
+		return newError("SPECIAL ATK battle stat (=%d) cannot exceed 999", p.Battle.SpeAttack)
 	}
 	if p.Battle.SpeDefense > 999 {
-		return newError("SPECIAL DEF stat (=%d) cannot exceed 999", p.Battle.SpeDefense)
+		return newError("SPECIAL DEF battle stat (=%d) cannot exceed 999", p.Battle.SpeDefense)
 	}
 	if p.Battle.Speed > 999 {
-		return newError("SPEED stat (=%d) cannot exceed 999", p.Battle.Speed)
+		return newError("SPEED battle stat (=%d) cannot exceed 999", p.Battle.Speed)
 	}
 
 	return nil
@@ -240,14 +259,12 @@ func (pt *PlatSavefile) validate() error {
 	
 	
 	*/
-	var err error
-
 	if len(pt.partyPokemon) > 6 {
 		return fmt.Errorf("VALIDATION ERR: party cannot hold more than 6 pokemon")
 	}
 	
 	for _, p := range pt.partyPokemon {
-		if err = pt.validatePokemon(p); err != nil {
+		if err := pt.validatePokemon(p); err != nil {
 			return err
 		}
 	}
