@@ -83,6 +83,8 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 		gender = enums.Unknown
 	}
 
+	form := (genderByte >> 3) & 0x1F
+
 	moves := make([]models.Move, 0)
 	for i := range 0x4 {
 		id := utils.U16(b, i*0x2)
@@ -132,6 +134,7 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 			SpeDefense: utils.U16(battleStats, 0x12),
 			Speed:      utils.U16(battleStats, 0xE),
 		},
+		Form: form,
 	}
 }
 
@@ -198,8 +201,6 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	p.Level = uint8(binarySearch(expTable, 0, len(expTable), p.Exp))
 	fmt.Printf("adjusted level (exp=%d): %d\n", p.Exp, p.Level)
 
-	// check that exp is not over the maximum for its growth type
-
 	// moveset ID validation
 	for _, move := range p.Moves {
 		if move.Id > 467 {
@@ -208,23 +209,8 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	}
 
 	// IV validation
-	if p.IV.Hp > 31 {
-		return newError("HP IV (=%d) cannot exceed 31", p.IV.Hp)
-	}
-	if p.IV.Attack > 31 {
-		return newError("ATTACK IV (=%d) cannot exceed 31", p.IV.Attack)
-	}
-	if p.IV.Defense > 31 {
-		return newError("DEFENSE IV (=%d) cannot exceed 31", p.IV.Defense)
-	}
-	if p.IV.SpeAttack > 31 {
-		return newError("SPECIAL ATK IV (=%d) cannot exceed 31", p.IV.SpeAttack)
-	}
-	if p.IV.SpeDefense > 31 {
-		return newError("SPECIAL DEF IV (=%d) cannot exceed 31", p.IV.SpeDefense)
-	}
-	if p.IV.Speed > 31 {
-		return newError("SPEED IV (=%d) cannot exceed 31", p.IV.Speed)
+	if err := p.IV.AssertBound(31); err != nil {
+		return newError(err.Error())
 	}
 
 	// gender bit validation
@@ -232,7 +218,24 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 		return newError("invalid gender: %d", p.Gender)
 	}
 
-	// form validation - TODO after implementing support for forms
+	// form validation
+	altFormPokemons := []utils.Pair[uint16, uint8]{
+		utils.NewPair[uint16, uint8](201, 28), utils.NewPair[uint16, uint8](386, 4),
+		utils.NewPair[uint16, uint8](412, 3), utils.NewPair[uint16, uint8](413, 3),
+		utils.NewPair[uint16, uint8](422, 2), utils.NewPair[uint16, uint8](423, 2),
+		utils.NewPair[uint16, uint8](479, 6), utils.NewPair[uint16, uint8](487, 2),
+		utils.NewPair[uint16, uint8](492, 2), utils.NewPair[uint16, uint8](493, 18),
+		// no pichu, only in HGSS
+	}
+	for _, pair := range altFormPokemons {
+		if pair.First != p.PokedexId {
+			continue
+		}
+
+		if p.Form > pair.Second {
+			return newError("Form ID for Pokemon #%d must not exceed %d", p.PokedexId, pair.Second)
+		}
+	}
 
 	// name validation - length should be 10 characters max (excluding end-of-string terminator)
 	if len(p.Name) == 0 || len(p.Name) > 10 {
@@ -247,50 +250,14 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	}
 
 	// battle stats validation
-	if p.Battle.Hp > 999 {
-		return newError("HP battle stat (=%d) cannot exceed 999", p.Battle.Hp)
-	}
-	if p.Battle.Attack > 999 {
-		return newError("ATTACK battle stat (=%d) cannot exceed 999", p.Battle.Attack)
-	}
-	if p.Battle.Defense > 999 {
-		return newError("DEFENSE battle stat (=%d) cannot exceed 999", p.Battle.Defense)
-	}
-	if p.Battle.SpeAttack > 999 {
-		return newError("SPECIAL ATK battle stat (=%d) cannot exceed 999", p.Battle.SpeAttack)
-	}
-	if p.Battle.SpeDefense > 999 {
-		return newError("SPECIAL DEF battle stat (=%d) cannot exceed 999", p.Battle.SpeDefense)
-	}
-	if p.Battle.Speed > 999 {
-		return newError("SPEED battle stat (=%d) cannot exceed 999", p.Battle.Speed)
+	if err := p.Battle.AssertBound(999); err != nil {
+		return newError(err.Error())
 	}
 
 	return nil
 }
 
-/*
-this functino shsould be aimed at validating the internal pokemon data before flushing.
-
-TODO: complete this function, and write the move parsing logic for all concrete savefiles
-*/
 func (pt *PlatSavefile) validate() error {
-	/*
-		what does it mean to "validate" data before flushing?
-		- the party pokemon field will have new and old data
-		- checksum validation (has to be done again after flushing, though?)
-		- check that the values in the party pokemon structs
-		  conform to the numeric limits imposed by the game
-		  (ie. level cannot be greater than 100, valid move IDs, etc.)
-
-		"Flushing data"
-		- for sake of simplicity, we can "pack" the entire party pokemon contents
-		  back into the savefile format.
-		- then we need to encrypt these changes and update checksums, and return the
-		  updated savefile
-
-
-	*/
 	if len(pt.partyPokemon) > 6 {
 		return fmt.Errorf("VALIDATION ERR: party cannot hold more than 6 pokemon")
 	}
@@ -362,6 +329,10 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 	}
 	B[0x18] = genderByte
 
+	// alternate forms. Ignored for pokemon without forms
+	B[0x18] &= 0x1F
+	B[0x18] |= (p.Form & 0x1F) << 3
+
 	length := min(len(p.Name), 10)
 	utils.Memset(C, 0x0, 0x16, 0xFF)
 	for i := range length {
@@ -382,30 +353,6 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 	utils.WriteU16(battleStatBuf, 0xE, p.Battle.Speed)
 	utils.WriteU16(battleStatBuf, 0x10, p.Battle.SpeAttack)
 	utils.WriteU16(battleStatBuf, 0x12, p.Battle.SpeDefense)
-	/*
-		block A:
-			pokedex id
-			item id
-			ability id
-			EVs
-			EXP
-
-		block B:
-			moveset ids
-			IVs
-			gender bits
-			form byte?
-
-		block C:
-			name
-
-		block D:
-			none
-
-		battle stats:
-			level
-			battle stats
-	*/
 }
 
 func (pt *PlatSavefile) Flush() error {

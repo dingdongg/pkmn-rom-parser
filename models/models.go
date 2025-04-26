@@ -39,6 +39,33 @@ func statStringHeader(title string) string {
 	return output
 }
 
+func (s Stat[T]) AssertBound(bound T) error {
+	err := func(stat string, val T) error {
+		return fmt.Errorf("%s stat (%d) cannot exceed %d", stat, val, bound)
+	}
+
+	if s.Hp > bound {
+		return err("HP", s.Hp)
+	}
+	if s.Attack > bound {
+		return err("ATTACK", s.Attack)
+	}
+	if s.Defense > bound {
+		return err("DEFENSE", s.Defense)
+	}
+	if s.SpeAttack > bound {
+		return err("SPECIAL ATK", s.SpeAttack)
+	}
+	if s.SpeDefense > bound {
+		return err("SPECIAL DEF", s.SpeDefense)
+	}
+	if s.Speed > bound {
+		return err("SPEED", s.Speed)
+	}
+
+	return nil
+}
+
 func (s Stat[T]) Print(title string) string {
 	header := statStringHeader(title)
 	ret := header
