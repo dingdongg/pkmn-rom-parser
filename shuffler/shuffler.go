@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-
-	"github.com/dingdongg/pkmn-rom-parser/v7/consts"
 )
 
 // from https://projectpokemon.org/home/docs/gen-4/pkm-structure-r65/
@@ -101,7 +99,7 @@ func GetPokemonBlock(buf []byte, block uint, personality uint32) ([]byte, error)
 		shiftValue := ((personality & 0x03E000) >> 0x0D) % 24
 		unshuffleInfo := unshuffleTable[shiftValue]
 		startAddr := unshuffleInfo.GetUnshuffledPos(block)
-		blockChunk := buf[startAddr : startAddr+consts.BLOCK_SIZE_BYTES]
+		blockChunk := buf[startAddr : startAddr+32]
 
 		return blockChunk, nil
 	}
