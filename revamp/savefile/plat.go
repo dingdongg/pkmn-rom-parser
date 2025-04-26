@@ -8,8 +8,8 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 
-	// "os"
-	// "github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
+	"os"
+	"github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
@@ -35,6 +35,8 @@ func NewPlatSavefile(bytes []byte) *PlatSavefile {
 		partyPokemon: make([]*models.Pokemon, 0), 
 		moveNames: ripper.RipMoveNames(),
 		rawParty: make([]byte, 0),					// decrypted
+		expTable: ripper.RipExpTableGen4(),
+		pokemonMetadata: ripper.RipPokemonData(),
 	}
 }
 
@@ -167,7 +169,34 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	}
 
 	// EV validation - nothign to do
-	// EXP validation - TODO
+	// EXP validation
+	growthType := pt.pokemonMetadata[p.PokedexId].GrowthType
+	// contains total EXP required to reach each level (has an entry for lvl 0 for some reason)
+	expTable := pt.expTable[growthType] 
+	if p.Exp < expTable[0] || p.Exp > expTable[100] {
+		return newError("Experience points out of bounds for pokemon #%d", p.PokedexId)
+	}
+
+	var binarySearch func(buf ripper.ExperienceTable, lo, hi int, target uint32) int
+	binarySearch = func(buf ripper.ExperienceTable, lo, hi int, target uint32) int {
+		if hi - lo == 1 {
+			return lo
+		}
+
+		mid := (lo + hi) >> 1
+
+		if buf[mid] < target {
+			return binarySearch(buf, mid, hi, target)
+		} else if buf[mid] > target {
+			return binarySearch(buf, lo, mid, target)
+		}
+
+		return mid
+	}
+
+	p.Level = uint8(binarySearch(expTable, 0, len(expTable), p.Exp))
+	fmt.Printf("adjusted level (exp=%d): %d\n", p.Exp, p.Level)
+
 	// check that exp is not over the maximum for its growth type
 
 	// moveset ID validation
@@ -210,6 +239,8 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	}
 
 	// level validation ?
+	// when both exp and level are modified, one has to be overridden... which one?
+	// have level overwritten if EXP is also modified
 	if p.Level > 100 {
 		return newError("level %d is too big; cannot exceed 100", p.Level)
 	}
@@ -394,7 +425,7 @@ func (pt *PlatSavefile) Flush() error {
 
 	copy(pt.rawBytes[pt.latestSave.Offset():], pt.latestSave.Bytes())
 
-	// fullpath := path_resolver.GetRoot() + "/new-plat.sav"
-	// os.WriteFile(fullpath, pt.rawBytes, os.ModePerm)
+	fullpath := path_resolver.GetRoot() + "/new-plat.sav"
+	os.WriteFile(fullpath, pt.rawBytes, os.ModePerm)
 	return nil
 }

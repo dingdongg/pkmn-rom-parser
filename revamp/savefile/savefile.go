@@ -5,6 +5,7 @@ import (
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
+	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator"
 	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator/block"
 )
@@ -42,6 +43,8 @@ type PlatSavefile struct {
 	partyPokemon []*models.Pokemon
 	moveNames []string
 	rawParty []byte
+	expTable []ripper.ExperienceTable
+	pokemonMetadata []ripper.PokemonMetadata
 }
 
 type DpSavefile struct {
