@@ -13,11 +13,11 @@ type entryFATB struct {
 
 type FrameFATB struct {
 	numEntries uint32
-	entries    []entryFATB
+	Entries    []entryFATB
 }
 
 func (fatb FrameFATB) Entry(index int) entryFATB {
-	return fatb.entries[index]
+	return fatb.Entries[index]
 }
 
 func (fatb FrameFATB) String() string {
@@ -26,7 +26,7 @@ func (fatb FrameFATB) String() string {
 
 	// show first 4 entries?
 	for i := range 4 {
-		start, end := fatb.entries[i].Start, fatb.entries[i].End
+		start, end := fatb.Entries[i].Start, fatb.Entries[i].End
 		ret += fmt.Sprintf("entry %d\n  start=0x%08X\n  end  =0x%08X\n", i, start, end)
 	}
 
@@ -51,7 +51,7 @@ func newFrameFATB(rom []byte, offset uint32) NitroFrame[FrameFATB] {
 	fatbFrame := FrameFATB{numEntries, make([]entryFATB, numEntries)}
 
 	for i := 0; i < int(numEntries); i += 1 {
-		fatbFrame.entries[i] = newEntryFATB(fatb[4:], i*0x8)
+		fatbFrame.Entries[i] = newEntryFATB(fatb[4:], i*0x8)
 	}
 
 	return NitroFrame[FrameFATB]{
