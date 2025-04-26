@@ -3,17 +3,16 @@ package block
 import (
 	"encoding/binary"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/walker"
+	"github.com/dingdongg/pkmn-rom-parser/v7/walker"
 )
 
-
 type Footer struct {
-	Bridge uint32
-	SaveCount uint32
-	BlockSize uint32
+	Bridge         uint32
+	SaveCount      uint32
+	BlockSize      uint32
 	MagicTimestamp uint32
-	unknown uint16
-	Checksum uint16
+	unknown        uint16
+	Checksum       uint16
 }
 
 func NewFooter(block []byte) Footer {
@@ -21,12 +20,12 @@ func NewFooter(block []byte) Footer {
 	footerData := block[len(block)-0x14:]
 	w := walker.NewWalker(footerData)
 	return Footer{
-		Bridge: w.U32(),
-		SaveCount: w.U32(),
-		BlockSize: w.U32(),
+		Bridge:         w.U32(),
+		SaveCount:      w.U32(),
+		BlockSize:      w.U32(),
 		MagicTimestamp: w.U32(),
-		unknown: w.U16(),
-		Checksum: w.U16(),
+		unknown:        w.U16(),
+		Checksum:       w.U16(),
 	}
 }
 
@@ -43,14 +42,14 @@ func (f Footer) Bytes() []byte {
 }
 
 type Block struct {
-	data []byte
+	data   []byte
 	offset int
 	Footer Footer
 }
 
 func NewBlock(block []byte, offset int) *Block {
 	return &Block{
-		data: block[:len(block)-0x14],
+		data:   block[:len(block)-0x14],
 		offset: offset,
 		Footer: NewFooter(block),
 	}

@@ -9,13 +9,14 @@ import (
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
 
 	"os"
+
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v7/ripper"
 	"github.com/dingdongg/pkmn-rom-parser/v7/shuffler"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/validator"
 )
 
 func NewPlatSavefile(bytes []byte) *PlatSavefile {
@@ -30,12 +31,12 @@ func NewPlatSavefile(bytes []byte) *PlatSavefile {
 	}
 
 	return &PlatSavefile{
-		rawBytes:     bytes,						// encrypted
-		latestSave: latestBlock,					// encrypted
-		partyPokemon: make([]*models.Pokemon, 0), 
-		moveNames: ripper.RipMoveNames(),
-		rawParty: make([]byte, 0),					// decrypted
-		expTable: ripper.RipExpTableGen4(),
+		rawBytes:        bytes,       // encrypted
+		latestSave:      latestBlock, // encrypted
+		partyPokemon:    make([]*models.Pokemon, 0),
+		moveNames:       ripper.RipMoveNames(),
+		rawParty:        make([]byte, 0), // decrypted
+		expTable:        ripper.RipExpTableGen4(),
 		pokemonMetadata: ripper.RipPokemonData(),
 	}
 }
@@ -70,15 +71,15 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 
 	ivBuffer := utils.U32(b, 0x10)
 	getIv := func(statIndex int) uint8 {
-		val := (ivBuffer >> (5*statIndex)) & 0x1F
+		val := (ivBuffer >> (5 * statIndex)) & 0x1F
 		return uint8(val)
 	}
 
 	genderByte := utils.U8(b, 0x18)
 	gender := enums.Male
-	if genderByte & 0x2 != 0 {
+	if genderByte&0x2 != 0 {
 		gender = enums.Female
-	} else if genderByte & 0x4 != 0 {
+	} else if genderByte&0x4 != 0 {
 		gender = enums.Unknown
 	}
 
@@ -86,50 +87,50 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	for i := range 0x4 {
 		id := utils.U16(b, i*0x2)
 		move := models.Move{
-			Id: id,
+			Id:   id,
 			Name: pt.moveNames[id],
 		}
 		moves = append(moves, move)
 	}
 
 	/*
-	missing: 
-	- base stats
-	- alternate forms
+		missing:
+		- base stats
+		- alternate forms
 	*/
 	return models.Pokemon{
-		Name: name,
+		Name:      name,
 		PokedexId: utils.U16(a, 0x0),
-		Exp: utils.U32(a, 0x8),
-		Level: utils.U8(battleStats, 0x4),
-		Nature: enums.Nature(utils.U32(raw, 0) % 25),
-		Ability: ability,
-		HeldItem: item.Name,
-		Gender: gender,
-		Moves: moves,
+		Exp:       utils.U32(a, 0x8),
+		Level:     utils.U8(battleStats, 0x4),
+		Nature:    enums.Nature(utils.U32(raw, 0) % 25),
+		Ability:   ability,
+		HeldItem:  item.Name,
+		Gender:    gender,
+		Moves:     moves,
 		EV: models.Stat[uint8]{
-			Hp: utils.U8(a, 0x10),
-			Attack: utils.U8(a, 0x11),
-			Defense: utils.U8(a, 0x12),
-			SpeAttack: utils.U8(a, 0x14),
+			Hp:         utils.U8(a, 0x10),
+			Attack:     utils.U8(a, 0x11),
+			Defense:    utils.U8(a, 0x12),
+			SpeAttack:  utils.U8(a, 0x14),
 			SpeDefense: utils.U8(a, 0x15),
-			Speed: utils.U8(a, 0x13),
+			Speed:      utils.U8(a, 0x13),
 		},
 		IV: models.Stat[uint8]{
-			Hp: getIv(0),
-			Attack: getIv(1),
-			Defense: getIv(2),
-			SpeAttack: getIv(4),
+			Hp:         getIv(0),
+			Attack:     getIv(1),
+			Defense:    getIv(2),
+			SpeAttack:  getIv(4),
 			SpeDefense: getIv(5),
-			Speed: getIv(3),
+			Speed:      getIv(3),
 		},
 		Battle: models.Stat[uint16]{
-			Hp: utils.U16(battleStats, 0x8),
-			Attack: utils.U16(battleStats, 0xA),
-			Defense: utils.U16(battleStats, 0xC),
-			SpeAttack: utils.U16(battleStats, 0x10),
+			Hp:         utils.U16(battleStats, 0x8),
+			Attack:     utils.U16(battleStats, 0xA),
+			Defense:    utils.U16(battleStats, 0xC),
+			SpeAttack:  utils.U16(battleStats, 0x10),
 			SpeDefense: utils.U16(battleStats, 0x12),
-			Speed: utils.U16(battleStats, 0xE),
+			Speed:      utils.U16(battleStats, 0xE),
 		},
 	}
 }
@@ -138,7 +139,7 @@ func (pt *PlatSavefile) PartyPokemon() []*models.Pokemon {
 	partySize := int(utils.U32(pt.latestSave.Data(), 0xA0-0x4))
 	for i := range partySize {
 		pkmn := pt.parsePokemon(i)
-		pt.partyPokemon = append(pt.partyPokemon, &pkmn)	
+		pt.partyPokemon = append(pt.partyPokemon, &pkmn)
 	}
 
 	return pt.partyPokemon
@@ -172,14 +173,14 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	// EXP validation
 	growthType := pt.pokemonMetadata[p.PokedexId].GrowthType
 	// contains total EXP required to reach each level (has an entry for lvl 0 for some reason)
-	expTable := pt.expTable[growthType] 
+	expTable := pt.expTable[growthType]
 	if p.Exp < expTable[0] || p.Exp > expTable[100] {
 		return newError("Experience points out of bounds for pokemon #%d", p.PokedexId)
 	}
 
 	var binarySearch func(buf ripper.ExperienceTable, lo, hi int, target uint32) int
 	binarySearch = func(buf ripper.ExperienceTable, lo, hi int, target uint32) int {
-		if hi - lo == 1 {
+		if hi-lo == 1 {
 			return lo
 		}
 
@@ -269,31 +270,31 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 }
 
 /*
-this functino shsould be aimed at validating the internal pokemon data before flushing. 
+this functino shsould be aimed at validating the internal pokemon data before flushing.
 
 TODO: complete this function, and write the move parsing logic for all concrete savefiles
 */
 func (pt *PlatSavefile) validate() error {
 	/*
-	what does it mean to "validate" data before flushing?
-	- the party pokemon field will have new and old data
-	- checksum validation (has to be done again after flushing, though?)
-	- check that the values in the party pokemon structs 
-	  conform to the numeric limits imposed by the game
-	  (ie. level cannot be greater than 100, valid move IDs, etc.)
-	
-	"Flushing data"
-	- for sake of simplicity, we can "pack" the entire party pokemon contents
-	  back into the savefile format.
-	- then we need to encrypt these changes and update checksums, and return the 
-	  updated savefile
-	
-	
+		what does it mean to "validate" data before flushing?
+		- the party pokemon field will have new and old data
+		- checksum validation (has to be done again after flushing, though?)
+		- check that the values in the party pokemon structs
+		  conform to the numeric limits imposed by the game
+		  (ie. level cannot be greater than 100, valid move IDs, etc.)
+
+		"Flushing data"
+		- for sake of simplicity, we can "pack" the entire party pokemon contents
+		  back into the savefile format.
+		- then we need to encrypt these changes and update checksums, and return the
+		  updated savefile
+
+
 	*/
 	if len(pt.partyPokemon) > 6 {
 		return fmt.Errorf("VALIDATION ERR: party cannot hold more than 6 pokemon")
 	}
-	
+
 	for _, p := range pt.partyPokemon {
 		if err := pt.validatePokemon(p); err != nil {
 			return err
@@ -308,7 +309,7 @@ func (pt *PlatSavefile) Version() enums.GameVersion {
 }
 
 func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
-	start := index*236
+	start := index * 236
 	buf := pt.rawParty[start : start+236]
 	pid := utils.U32(buf, 0)
 
@@ -316,7 +317,7 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 	b, _ := shuffler.GetPokemonBlockLocation(shuffler.B, pid)
 	c, _ := shuffler.GetPokemonBlockLocation(shuffler.C, pid)
 
-	A, B, C := buf[a : a+32], buf[b : b+32], buf[c : c+32]
+	A, B, C := buf[a:a+32], buf[b:b+32], buf[c:c+32]
 
 	utils.WriteU16(A, 0x0, p.PokedexId)
 	itemMap := data.GenerateItemMap()
@@ -344,18 +345,20 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 
 	// pack IVs
 	var packedIv uint32 = utils.U32(B, 0x10) & 0xC0_00_00_00
-	packedIv |= uint32(p.IV.Hp & 0x1F) 
-	packedIv |= (uint32(p.IV.Attack & 0x1F) << 5) 
-	packedIv |= (uint32(p.IV.Defense & 0x1F) << 10) 
-	packedIv |= (uint32(p.IV.Speed & 0x1F) << 15) 
-	packedIv |= (uint32(p.IV.SpeAttack & 0x1F) << 20) 
-	packedIv |= (uint32(p.IV.SpeDefense & 0x1F) << 25) 
+	packedIv |= uint32(p.IV.Hp & 0x1F)
+	packedIv |= (uint32(p.IV.Attack&0x1F) << 5)
+	packedIv |= (uint32(p.IV.Defense&0x1F) << 10)
+	packedIv |= (uint32(p.IV.Speed&0x1F) << 15)
+	packedIv |= (uint32(p.IV.SpeAttack&0x1F) << 20)
+	packedIv |= (uint32(p.IV.SpeDefense&0x1F) << 25)
 	utils.WriteU32(B, 0x10, packedIv)
 
 	genderByte := B[0x18] & 0xF9
-	switch (p.Gender) {
-	case enums.Female: genderByte |= 0x02
-	case enums.Unknown: genderByte |= 0x04
+	switch p.Gender {
+	case enums.Female:
+		genderByte |= 0x02
+	case enums.Unknown:
+		genderByte |= 0x04
 	}
 	B[0x18] = genderByte
 
@@ -380,28 +383,28 @@ func (pt *PlatSavefile) updatePokemon(index int, p *models.Pokemon) {
 	utils.WriteU16(battleStatBuf, 0x10, p.Battle.SpeAttack)
 	utils.WriteU16(battleStatBuf, 0x12, p.Battle.SpeDefense)
 	/*
-	block A:
-		pokedex id
-		item id
-		ability id
-		EVs
-		EXP
+		block A:
+			pokedex id
+			item id
+			ability id
+			EVs
+			EXP
 
-	block B:
-		moveset ids
-		IVs
-		gender bits
-		form byte?
-	
-	block C:
-		name
+		block B:
+			moveset ids
+			IVs
+			gender bits
+			form byte?
 
-	block D:
-		none
+		block C:
+			name
 
-	battle stats:
-		level
-		battle stats
+		block D:
+			none
+
+		battle stats:
+			level
+			battle stats
 	*/
 }
 
@@ -413,7 +416,7 @@ func (pt *PlatSavefile) Flush() error {
 	encryptedBuffer := make([]byte, 0)
 	for i, p := range pt.partyPokemon {
 		pt.updatePokemon(i, p)
-		offset := i*236
+		offset := i * 236
 		ciphertext := crypt.EncryptPokemon(pt.rawParty[offset : offset+236])
 		encryptedBuffer = append(encryptedBuffer, ciphertext...)
 	}

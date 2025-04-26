@@ -3,11 +3,11 @@ package savefile
 import (
 	"log"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator/block"
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/models"
+	"github.com/dingdongg/pkmn-rom-parser/v7/ripper"
+	"github.com/dingdongg/pkmn-rom-parser/v7/validator"
+	"github.com/dingdongg/pkmn-rom-parser/v7/validator/block"
 )
 
 type Savefile interface {
@@ -25,25 +25,30 @@ type Savefile interface {
 func NewSavefile(bytes []byte) Savefile {
 	game := validator.IdentifyGame(bytes)
 
-	switch (game) {
-	case enums.DP: return NewDpSavefile(bytes)
-	case enums.PLAT: return NewPlatSavefile(bytes)
-	case enums.HGSS: return NewHgssSavefile(bytes)
-	case enums.BW: return NewBwSavefile(bytes)
-	case enums.B2W2: return NewB2W2Savefile(bytes)
-	default: 
+	switch game {
+	case enums.DP:
+		return NewDpSavefile(bytes)
+	case enums.PLAT:
+		return NewPlatSavefile(bytes)
+	case enums.HGSS:
+		return NewHgssSavefile(bytes)
+	case enums.BW:
+		return NewBwSavefile(bytes)
+	case enums.B2W2:
+		return NewB2W2Savefile(bytes)
+	default:
 		log.Fatal("unrecognized save file")
 		return nil
 	}
 }
 
 type PlatSavefile struct {
-	rawBytes     []byte
-	latestSave   *block.Block
-	partyPokemon []*models.Pokemon
-	moveNames []string
-	rawParty []byte
-	expTable []ripper.ExperienceTable
+	rawBytes        []byte
+	latestSave      *block.Block
+	partyPokemon    []*models.Pokemon
+	moveNames       []string
+	rawParty        []byte
+	expTable        []ripper.ExperienceTable
 	pokemonMetadata []ripper.PokemonMetadata
 }
 

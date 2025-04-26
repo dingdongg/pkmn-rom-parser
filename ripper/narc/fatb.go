@@ -3,7 +3,7 @@ package narc
 import (
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
 )
 
 type entryFATB struct {

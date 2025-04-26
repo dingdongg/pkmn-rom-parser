@@ -3,7 +3,7 @@ package narc
 import (
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
 )
 
 const FILENAMES_INCLUDED uint32 = 0x00_00_00_08

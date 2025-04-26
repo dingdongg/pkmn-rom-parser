@@ -1,8 +1,8 @@
 package savefile
 
 import (
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/models"
 )
 
 func NewB2W2Savefile(bytes []byte) *B2W2Savefile {

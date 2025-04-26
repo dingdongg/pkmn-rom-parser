@@ -3,20 +3,20 @@ package walker
 import (
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
 )
 
 type Walker struct {
 	buffer []byte
-	index int
-	done bool
+	index  int
+	done   bool
 }
 
 func NewWalker(buf []byte) *Walker {
 	return &Walker{
 		buffer: buf,
-		index: 0,
-		done: false,
+		index:  0,
+		done:   false,
 	}
 }
 

@@ -3,7 +3,7 @@ package models
 import (
 	"fmt"
 
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
 )
 
 type TODO struct{}
@@ -13,16 +13,16 @@ type StatNumber interface {
 }
 
 type Stat[T StatNumber] struct {
-	Hp T
-	Attack T
-	Defense T
-	SpeAttack T
+	Hp         T
+	Attack     T
+	Defense    T
+	SpeAttack  T
 	SpeDefense T
-	Speed T
+	Speed      T
 }
 
 func statStringHeader(title string) string {
-	statLogWidth := 49 // 7*6 + 7 == 49
+	statLogWidth := 49                         // 7*6 + 7 == 49
 	numDashes := statLogWidth - len(title) - 2 // extra space on either side of title
 	output := ""
 	firstHalfWidth := numDashes >> 1
@@ -32,7 +32,7 @@ func statStringHeader(title string) string {
 	}
 	output += fmt.Sprintf(" %s ", title)
 	// append dashes to title
-	for range (numDashes - firstHalfWidth) {
+	for range numDashes - firstHalfWidth {
 		output += "-"
 	}
 
@@ -46,18 +46,18 @@ func (s Stat[T]) Print(title string) string {
 }
 
 func (s Stat[T]) String() string {
-	ret :=             "|   Hp  | Attck | Dfnse | SpAtk | SpDef | Speed |\n"
-	ret +=             "-------------------------------------------------\n"
-	ret += fmt.Sprintf("|  %3d  | %3d   | %3d   | %3d   | %3d   | %3d   |\n", 
-					   s.Hp, s.Attack, s.Defense, s.SpeAttack, s.SpeDefense, s.Speed)
-	ret +=             "-------------------------------------------------\n"
+	ret := "|   Hp  | Attck | Dfnse | SpAtk | SpDef | Speed |\n"
+	ret += "-------------------------------------------------\n"
+	ret += fmt.Sprintf("|  %3d  | %3d   | %3d   | %3d   | %3d   | %3d   |\n",
+		s.Hp, s.Attack, s.Defense, s.SpeAttack, s.SpeDefense, s.Speed)
+	ret += "-------------------------------------------------\n"
 
 	return ret
 }
 
 type Move struct {
-	Id uint16
-	Name string
+	Id        uint16
+	Name      string
 	MaxPoints uint8
 }
 
@@ -79,7 +79,7 @@ type Pokemon struct {
 	EV        Stat[uint8]
 	IV        Stat[uint8]
 	Gender    enums.Gender
-	Form      TODO
+	Form      uint8
 }
 
 func (p *Pokemon) String() string {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
 )
 
 type bytes struct {

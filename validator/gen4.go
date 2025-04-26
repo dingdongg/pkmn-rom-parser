@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/validator/block"
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/validator/block"
 )
 
 func validateBlock(b *block.Block) error {
@@ -26,16 +26,16 @@ func validateBlock(b *block.Block) error {
 }
 
 /*
-	this functino may seem like it is returning a region of memory on the stack
-	(ie. a static array), but golang actually returns a copy of this static array
-	which is allocated within the stack frame of the CALLING function
+this functino may seem like it is returning a region of memory on the stack
+(ie. a static array), but golang actually returns a copy of this static array
+which is allocated within the stack frame of the CALLING function
 */
 func getBlocks(savefile []byte, start, end uint) [2]*block.Block {
-	sb1 := block.NewBlock(savefile[start : end+1], 0x0)
+	sb1 := block.NewBlock(savefile[start:end+1], 0x0)
 	start, end = start+0x40000, end+0x40000
-	sb2 := block.NewBlock(savefile[start : end+1], 0x40000)
+	sb2 := block.NewBlock(savefile[start:end+1], 0x40000)
 
-	return [2]*block.Block{ sb1, sb2 }
+	return [2]*block.Block{sb1, sb2}
 }
 
 func LatestSmallBlock(savefile []byte, offsets utils.Range[uint]) (*block.Block, error) {

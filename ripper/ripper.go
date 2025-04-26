@@ -7,38 +7,37 @@ import (
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
 	"github.com/dingdongg/pkmn-rom-parser/v7/data"
+	"github.com/dingdongg/pkmn-rom-parser/v7/dsa"
+	"github.com/dingdongg/pkmn-rom-parser/v7/enums"
+	"github.com/dingdongg/pkmn-rom-parser/v7/models"
 	"github.com/dingdongg/pkmn-rom-parser/v7/path_resolver"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/dsa"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/enums"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/models"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/ripper/narc"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/utils"
-	"github.com/dingdongg/pkmn-rom-parser/v7/revamp/walker"
+	"github.com/dingdongg/pkmn-rom-parser/v7/ripper/narc"
+	"github.com/dingdongg/pkmn-rom-parser/v7/utils"
+	"github.com/dingdongg/pkmn-rom-parser/v7/walker"
 )
 
-
 type PokemonMetadata struct {
-	Base models.Stat[uint8]
-	Type1 uint8
-	Type2 uint8
-	CatchRate uint8
-	ExpYield uint8
-	EVYield models.Stat[uint8]
-	Item1 uint16
-	Item2 uint16
+	Base            models.Stat[uint8]
+	Type1           uint8
+	Type2           uint8
+	CatchRate       uint8
+	ExpYield        uint8
+	EVYield         models.Stat[uint8]
+	Item1           uint16
+	Item2           uint16
 	GenderThreshold uint8
-	EggCycles uint8
-	BaseFriendship uint8
-	GrowthType uint8
-	EggGroup1 uint8
-	EggGroup2 uint8
-	Ability1 uint8
-	Ability2 uint8
-	SafariZoneRate uint8
-	Color uint8
-	Padding1 uint16
-	MoveFlags []byte // length 13
-	Padding2 []byte // length 3
+	EggCycles       uint8
+	BaseFriendship  uint8
+	GrowthType      uint8
+	EggGroup1       uint8
+	EggGroup2       uint8
+	Ability1        uint8
+	Ability2        uint8
+	SafariZoneRate  uint8
+	Color           uint8
+	Padding1        uint16
+	MoveFlags       []byte // length 13
+	Padding2        []byte // length 3
 }
 
 type ExperienceTable = []uint32
@@ -67,45 +66,45 @@ func NewPokemon(buffer []byte, offset int) PokemonMetadata {
 
 	rawEV := utils.U16(obj, 10)
 	getEV := func(index int) uint8 {
-		return uint8((rawEV >> (index*2)) & 0b11)
+		return uint8((rawEV >> (index * 2)) & 0b11)
 	}
 
 	return PokemonMetadata{
 		Base: models.Stat[uint8]{
-			Hp: utils.U8(obj, 0),
-			Attack: utils.U8(obj, 1),
-			Defense: utils.U8(obj, 2),
-			SpeAttack: utils.U8(obj, 4),
-			SpeDefense: utils.U8(obj,5),
-			Speed: utils.U8(obj, 3),
+			Hp:         utils.U8(obj, 0),
+			Attack:     utils.U8(obj, 1),
+			Defense:    utils.U8(obj, 2),
+			SpeAttack:  utils.U8(obj, 4),
+			SpeDefense: utils.U8(obj, 5),
+			Speed:      utils.U8(obj, 3),
 		},
-		Type1: utils.U8(obj, 6),
-		Type2: utils.U8(obj, 7),
+		Type1:     utils.U8(obj, 6),
+		Type2:     utils.U8(obj, 7),
 		CatchRate: utils.U8(obj, 8),
-		ExpYield: utils.U8(obj, 9),
+		ExpYield:  utils.U8(obj, 9),
 		EVYield: models.Stat[uint8]{
-			Hp: getEV(0),
-			Attack: getEV(1),
-			Defense: getEV(2),
-			SpeAttack: getEV(4),
+			Hp:         getEV(0),
+			Attack:     getEV(1),
+			Defense:    getEV(2),
+			SpeAttack:  getEV(4),
 			SpeDefense: getEV(5),
-			Speed: getEV(3),
+			Speed:      getEV(3),
 		},
-		Item1: utils.U16(obj, 12),
-		Item2: utils.U16(obj, 14),
+		Item1:           utils.U16(obj, 12),
+		Item2:           utils.U16(obj, 14),
 		GenderThreshold: utils.U8(obj, 16),
-		EggCycles: utils.U8(obj, 17),
-		BaseFriendship: utils.U8(obj, 18),
-		GrowthType: utils.U8(obj, 19),
-		EggGroup1: utils.U8(obj, 20),
-		EggGroup2: utils.U8(obj, 21),
-		Ability1: utils.U8(obj, 22),
-		Ability2: utils.U8(obj, 23),
-		SafariZoneRate: utils.U8(obj, 24),
-		Color: utils.U8(obj, 25),
-		Padding1: utils.U16(obj, 26),
-		MoveFlags: obj[28 : 41],
-		Padding2: obj[41 : 44],
+		EggCycles:       utils.U8(obj, 17),
+		BaseFriendship:  utils.U8(obj, 18),
+		GrowthType:      utils.U8(obj, 19),
+		EggGroup1:       utils.U8(obj, 20),
+		EggGroup2:       utils.U8(obj, 21),
+		Ability1:        utils.U8(obj, 22),
+		Ability2:        utils.U8(obj, 23),
+		SafariZoneRate:  utils.U8(obj, 24),
+		Color:           utils.U8(obj, 25),
+		Padding1:        utils.U16(obj, 26),
+		MoveFlags:       obj[28:41],
+		Padding2:        obj[41:44],
 	}
 }
 
@@ -151,7 +150,7 @@ func RipMoveNamesGen5() []string {
 	size := moveFileMetadata.End - moveFileMetadata.Start + 1
 	fmt.Printf("moves name offset: 0x%08X, size=0x%08X\n", moveFileMetadata.Start, size)
 
-	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start : moveFileMetadata.End]
+	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start:moveFileMetadata.End]
 
 	decryptFile := func(buffer []byte) []string {
 		w := walker.NewWalker(buffer)
@@ -254,7 +253,7 @@ func RipExpTableGen4() []ExperienceTable {
 	data := narcFile.FrameFIMG.Data.Data
 
 	for _, e := range entries {
-		tbl := newGrowthTableGen4(data[e.Start : e.End])
+		tbl := newGrowthTableGen4(data[e.Start:e.End])
 		ret = append(ret, tbl)
 	}
 
@@ -277,7 +276,7 @@ func RipMoveNames() []string {
 	size := moveFileMetadata.End - moveFileMetadata.Start + 1
 	fmt.Printf("moves name offset: 0x%08X, size=0x%08X\n", moveFileMetadata.Start, size)
 	// yer := narcFile.FrameFIMG.Data.Data
-	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start : moveFileMetadata.End]
+	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start:moveFileMetadata.End]
 	// fmt.Println(buf)
 
 	decryptFile := func(buffer []byte) []string {
@@ -299,23 +298,23 @@ func RipMoveNames() []string {
 		// generate offsets & sizes
 		for i := uint16(1); i <= num; i++ {
 			seedMult := seed * i
-			key := uint32(((seedMult*0x02FD) & 0xFFFF)) | ((uint32(seedMult)*0x02FD0000) & 0xFFFF0000)
-			offsets[i - 1] = w.U32() ^ key
-			sizes[i - 1] = w.U32() ^ key
+			key := uint32(((seedMult * 0x02FD) & 0xFFFF)) | ((uint32(seedMult) * 0x02FD0000) & 0xFFFF0000)
+			offsets[i-1] = w.U32() ^ key
+			sizes[i-1] = w.U32() ^ key
 		}
 
 		for i := uint16(1); i <= num; i++ {
-			off := &offsets[i - 1]
-			sz := &sizes[i - 1]
-			bString := binaryStrings[i - 1]
-			key := (uint32(0x91BD3)*uint32(i)) & 0x0000FFFF
-			txt := &texts[i - 1]
+			off := &offsets[i-1]
+			sz := &sizes[i-1]
+			bString := binaryStrings[i-1]
+			key := (uint32(0x91BD3) * uint32(i)) & 0x0000FFFF
+			txt := &texts[i-1]
 
 			w.Seek(int(*off))
 
 			for j := uint32(1); j <= *sz; j++ {
-				bString = append(bString, w.U16() ^ uint16(key))
-				key = (key+0x493D) & 0xFFFF
+				bString = append(bString, w.U16()^uint16(key))
+				key = (key + 0x493D) & 0xFFFF
 			}
 
 			if bString[0] == 0xF100 {
@@ -333,29 +332,29 @@ func RipMoveNames() []string {
 
 					for bit >= 9 {
 						bit -= 9
-						newString = append(newString, container & 0x01FF)
+						newString = append(newString, container&0x01FF)
 						container >>= 9
 					}
 				}
-				binaryStrings[i - 1] = newString
+				binaryStrings[i-1] = newString
 				*sz = uint32(len(newString))
 			}
 
 			*txt = ""
 			textStack := make([]string, 0)
-			// TODO: instead of iterating from the back, we 
+			// TODO: instead of iterating from the back, we
 			// could just iterate normally...
 			for len(bString) != 0 {
 				lastChar := bString[len(bString)-1]
 				bString = bString[:len(bString)-1] // pop()
-				
+
 				if lastChar == 0xFFFF {
 					// break <-- will discard every string we look at
 					continue
 				} else if lastChar == 0xFFFE {
 					c := bString[len(bString)-1]
 					bString = bString[:len(bString)-1]
-					args := []uint16{ 0x0000 }
+					args := []uint16{0x0000}
 					for k := uint16(1); k <= c; k++ {
 						args = append(args, bString[len(bString)-1])
 						bString = bString[:len(bString)-1]
