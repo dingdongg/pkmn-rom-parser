@@ -41,6 +41,8 @@ type PokemonMetadata struct {
 	Padding2 []byte // length 3
 }
 
+type ExperienceTable = []uint32
+
 func (pm PokemonMetadata) String() string {
 	ret := "========================\n=== Pokemon Metadata ===\n========================\n"
 	ret += fmt.Sprintf("Gender threshold: %d\n", pm.GenderThreshold)
@@ -107,7 +109,7 @@ func NewPokemon(buffer []byte, offset int) PokemonMetadata {
 	}
 }
 
-func RipPokemonData() {
+func RipPokemonData() []PokemonMetadata {
 	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
 	f, err := os.ReadFile(path)
 
@@ -116,12 +118,15 @@ func RipPokemonData() {
 	}
 
 	narcFile := narc.NewNarcFile(f, 0x0370A400)
-	yer := narcFile.FrameFIMG.Data.Data
+	buffer := narcFile.FrameFIMG.Data.Data
+	ret := make([]PokemonMetadata, 0)
 
+	// static range is not good, determine at runtime using FATB frame...
 	for i := range 508 {
-		pkmn := NewPokemon(yer, i*44)
-		fmt.Println(pkmn)
+		ret = append(ret, NewPokemon(buffer, i*44))
 	}
+
+	return ret
 }
 
 func buf2D[T any](x uint16, y uint16) [][]T {
@@ -222,6 +227,38 @@ func RipMoveNamesGen5() []string {
 	}
 
 	return decryptFile(buf)
+}
+
+func newGrowthTableGen4(file []byte) ExperienceTable {
+	// 101 entries of uint32s
+	table := make(ExperienceTable, 0)
+
+	for i := 0x0; i < len(file); i += 4 {
+		table = append(table, utils.U32(file, i))
+	}
+
+	return table
+}
+
+func RipExpTableGen4() []ExperienceTable {
+	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
+	f, err := os.ReadFile(path)
+
+	if err != nil {
+		panic(err)
+	}
+
+	narcFile := narc.NewNarcFile(f, 0x03718200)
+	entries := narcFile.FrameFATB.Data.Entries
+	ret := make([]ExperienceTable, 0)
+	data := narcFile.FrameFIMG.Data.Data
+
+	for _, e := range entries {
+		tbl := newGrowthTableGen4(data[e.Start : e.End])
+		ret = append(ret, tbl)
+	}
+
+	return ret
 }
 
 // different for gen 5 ?
