@@ -98,7 +98,6 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 	/*
 		missing:
 		- base stats
-		- alternate forms
 	*/
 	return models.Pokemon{
 		Name:      name,
