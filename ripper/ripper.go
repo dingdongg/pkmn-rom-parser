@@ -3,6 +3,7 @@ package ripper
 import (
 	"fmt"
 	"os"
+	"strings"
 	"unicode/utf16"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/char"
@@ -260,6 +261,119 @@ func RipExpTableGen4() []ExperienceTable {
 	return ret
 }
 
+func parseMessageFileGen4(buffer []byte) []string {
+	w := walker.NewWalker(buffer)
+	num, seed := w.U16(), w.U16()
+
+	offsets := make([]uint32, num)
+	sizes := make([]uint32, num)
+
+	// num * len(sizes) == num * num?
+	// https://projectpokemon.org/rawdb/platinum/formats/msg.php
+	binaryStrings := make([][]uint16, 0)
+	for range num {
+		binaryStrings = append(binaryStrings, make([]uint16, 0))
+	}
+
+	texts := make([]string, num)
+
+	// generate offsets & sizes
+	for i := uint16(1); i <= num; i++ {
+		seedMult := seed * i
+		key := uint32(((seedMult * 0x02FD) & 0xFFFF)) | ((uint32(seedMult) * 0x02FD0000) & 0xFFFF0000)
+		offsets[i-1] = w.U32() ^ key
+		sizes[i-1] = w.U32() ^ key
+	}
+
+	for i := uint16(1); i <= num; i++ {
+		off := &offsets[i-1]
+		sz := &sizes[i-1]
+		bString := binaryStrings[i-1]
+		key := (uint32(0x91BD3) * uint32(i)) & 0x0000FFFF
+		txt := &texts[i-1]
+
+		w.Seek(int(*off))
+
+		for j := uint32(1); j <= *sz; j++ {
+			bString = append(bString, w.U16()^uint16(key))
+			key = (key + 0x493D) & 0xFFFF
+		}
+
+		if bString[0] == 0xF100 {
+			fmt.Println("de-compressing")
+			// decompress from 9-bit strings to 16-bits
+			newString := make([]uint16, 1)
+			newString[0] = 0x0000
+			bString = bString[:len(bString)-1] // pop()
+			container, bit := uint16(0), uint16(0)
+
+			for len(bString) != 0 {
+				lastChar := bString[len(bString)-1]
+				bString = bString[:len(bString)-1]
+				container |= lastChar << bit
+
+				for bit >= 9 {
+					bit -= 9
+					newString = append(newString, container&0x01FF)
+					container >>= 9
+				}
+			}
+			binaryStrings[i-1] = newString
+			*sz = uint32(len(newString))
+		}
+
+		*txt = ""
+		textStack := make([]string, 0)
+		// TODO: instead of iterating from the back, we
+		// could just iterate normally...
+		for len(bString) != 0 {
+			lastChar := bString[len(bString)-1]
+			bString = bString[:len(bString)-1] // pop()
+
+			if lastChar == 0xFFFF {
+				// break <-- will discard every string we look at
+				continue
+			} else if lastChar == 0xFFFE {
+				c := bString[len(bString)-1]
+				bString = bString[:len(bString)-1]
+				args := []uint16{0x0000}
+				for k := uint16(1); k <= c; k++ {
+					args = append(args, bString[len(bString)-1])
+					bString = bString[:len(bString)-1]
+				}
+
+				for _, a := range args {
+					converted, err := char.Char(a)
+					if err != nil {
+						fmt.Println("unrecognized character")
+						os.Exit(1)
+					}
+					textStack = append(textStack, converted)
+				}
+			} else {
+				// fmt.Printf("lastChar: 0x%04X\n", lastChar)
+				c, err := char.Char(lastChar)
+				if err != nil {
+					fmt.Printf("unrecognized character!!!!! 0x%04X\n", lastChar)
+				}
+				textStack = append(textStack, c)
+			}
+		}
+
+		// reverse stack and push into txt buffer
+		// can be removed once iteration direction
+		// of above loop is reversed
+		k := len(textStack) - 1
+		for k > -1 {
+			*txt += textStack[k]
+			k -= 1
+		}
+	}
+
+	// fmt.Println("output:\n", texts)
+	return texts
+}
+
 // different for gen 5 ?
 func RipMoveNames() []string {
 	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
@@ -279,118 +393,207 @@ func RipMoveNames() []string {
 	buf := narcFile.FrameFIMG.Data.Data[moveFileMetadata.Start:moveFileMetadata.End]
 	// fmt.Println(buf)
 
-	decryptFile := func(buffer []byte) []string {
-		w := walker.NewWalker(buffer)
-		num, seed := w.U16(), w.U16()
+	return parseMessageFileGen4(buf)
+}
 
-		offsets := make([]uint32, num)
-		sizes := make([]uint32, num)
+func RipPokemonNamesGen4() []string {
+	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
+	f, err := os.ReadFile(path)
 
-		// num * len(sizes) == num * num?
-		// https://projectpokemon.org/rawdb/platinum/formats/msg.php
-		binaryStrings := make([][]uint16, 0)
-		for range num {
-			binaryStrings = append(binaryStrings, make([]uint16, 0))
-		}
-
-		texts := make([]string, num)
-
-		// generate offsets & sizes
-		for i := uint16(1); i <= num; i++ {
-			seedMult := seed * i
-			key := uint32(((seedMult * 0x02FD) & 0xFFFF)) | ((uint32(seedMult) * 0x02FD0000) & 0xFFFF0000)
-			offsets[i-1] = w.U32() ^ key
-			sizes[i-1] = w.U32() ^ key
-		}
-
-		for i := uint16(1); i <= num; i++ {
-			off := &offsets[i-1]
-			sz := &sizes[i-1]
-			bString := binaryStrings[i-1]
-			key := (uint32(0x91BD3) * uint32(i)) & 0x0000FFFF
-			txt := &texts[i-1]
-
-			w.Seek(int(*off))
-
-			for j := uint32(1); j <= *sz; j++ {
-				bString = append(bString, w.U16()^uint16(key))
-				key = (key + 0x493D) & 0xFFFF
-			}
-
-			if bString[0] == 0xF100 {
-				fmt.Println("de-compressing")
-				// decompress from 9-bit strings to 16-bits
-				newString := make([]uint16, 1)
-				newString[0] = 0x0000
-				bString = bString[:len(bString)-1] // pop()
-				container, bit := uint16(0), uint16(0)
-
-				for len(bString) != 0 {
-					lastChar := bString[len(bString)-1]
-					bString = bString[:len(bString)-1]
-					container |= lastChar << bit
-
-					for bit >= 9 {
-						bit -= 9
-						newString = append(newString, container&0x01FF)
-						container >>= 9
-					}
-				}
-				binaryStrings[i-1] = newString
-				*sz = uint32(len(newString))
-			}
-
-			*txt = ""
-			textStack := make([]string, 0)
-			// TODO: instead of iterating from the back, we
-			// could just iterate normally...
-			for len(bString) != 0 {
-				lastChar := bString[len(bString)-1]
-				bString = bString[:len(bString)-1] // pop()
-
-				if lastChar == 0xFFFF {
-					// break <-- will discard every string we look at
-					continue
-				} else if lastChar == 0xFFFE {
-					c := bString[len(bString)-1]
-					bString = bString[:len(bString)-1]
-					args := []uint16{0x0000}
-					for k := uint16(1); k <= c; k++ {
-						args = append(args, bString[len(bString)-1])
-						bString = bString[:len(bString)-1]
-					}
-
-					for _, a := range args {
-						converted, err := char.Char(a)
-						if err != nil {
-							fmt.Println("unrecognized character")
-							os.Exit(1)
-						}
-						textStack = append(textStack, converted)
-					}
-				} else {
-					// fmt.Printf("lastChar: 0x%04X\n", lastChar)
-					c, err := char.Char(lastChar)
-					if err != nil {
-						fmt.Printf("unrecognized character!!!!! 0x%04X\n", lastChar)
-					}
-					textStack = append(textStack, c)
-				}
-			}
-
-			// reverse stack and push into txt buffer
-			// can be removed once iteration direction
-			// of above loop is reversed
-			k := len(textStack) - 1
-			for k > -1 {
-				*txt += textStack[k]
-				k -= 1
-			}
-		}
-
-		// fmt.Println("output:\n", texts)
-		return texts
+	if err != nil {
+		panic(err)
 	}
 
-	return decryptFile(buf)
+	narcFile := narc.NewNarcFile(f, 0x0162DE00)
+	namesFileMetadata := narcFile.FrameFATB.Data.Entry(712)
+
+	buf := narcFile.FrameFIMG.Data.Data[namesFileMetadata.Start:namesFileMetadata.End]
+	names := parseMessageFileGen4(buf)
+	for i := range names {
+		names[i] = names[i][5:]
+	}
+	return names
+}
+
+type TrainerPokemon struct {
+	Difficulty uint16
+	Level uint16 // technicall u8 + u8 of padding, but same thing since this is little-endian
+	Species uint16
+	Seal uint16
+	ItemId *uint16		// optional
+	MoveIds []*uint16	// optional
+}
+
+var pokemonNames []string = RipPokemonNamesGen4()
+var moveNames []string = RipMoveNames()
+
+func (pkmn TrainerPokemon) String() string {
+	tokens := make([]string, 0)
+	tokens = append(tokens, fmt.Sprintf("  difficulty: %d", pkmn.Difficulty))
+	tokens = append(tokens, fmt.Sprintf("  level:      %d", pkmn.Level))
+
+	form, pokedexId := (pkmn.Species & 0x0C00) >> 10, pkmn.Species & 0x3FF
+	pokemonName := pokemonNames[pokedexId]
+	tokens = append(tokens, "  Species:")
+	tokens = append(tokens, fmt.Sprintf("    form:       %d", form))
+	tokens = append(tokens, fmt.Sprintf("    pokedex id: %d (%s)", pokedexId, pokemonName))
+	tokens = append(tokens, fmt.Sprintf("  seal:       %d", pkmn.Seal))
+
+	if pkmn.ItemId != nil {
+		tokens = append(tokens, fmt.Sprintf("  item ID:    %d", *pkmn.ItemId))
+	}
+	for i, m := range pkmn.MoveIds {
+		if m != nil {
+			tokens = append(tokens, fmt.Sprintf("  move ID #%d: %d (%s)", i+1, *m, moveNames[*m]))
+		}
+	}
+
+	return "\n" + strings.Join(tokens, "\n") + "\n"
+}
+
+type PlatTrainer struct {
+	Flags uint8
+	Class uint8
+	BattleType uint8
+	NumPokemon uint8
+	Item1 uint16
+	Item2 uint16
+	Item3 uint16
+	Item4 uint16
+	AiType uint32
+	BattleType2 uint32
+	PartyPokemon []TrainerPokemon
+}
+
+func (tr PlatTrainer) String() string {
+	tokens := ""
+	tokens += fmt.Sprintf("flags:  %8b\n", tr.Flags)
+	tokens += fmt.Sprintf("trainer class: %d\n", tr.Class)
+	tokens += fmt.Sprintf("battle type 1: %d\n", tr.BattleType)
+	tokens += fmt.Sprintf("# pokemons:    %d\n", tr.NumPokemon)
+	
+	itemIds := [4]uint16{ tr.Item1, tr.Item2, tr.Item3, tr.Item4 }
+	for i, itemId := range itemIds {
+		if itemId != 0 {
+			tokens += fmt.Sprintf("trainer item ID #%d: %d\n", i, itemId)
+		}
+	}
+
+	tokens += fmt.Sprintf("AI Model:      %d\n", tr.AiType)
+	tokens += fmt.Sprintf("battle type 2: %d\n", tr.BattleType2)
+
+	if (len(tr.PartyPokemon) > 0) {
+		tokens += "-- Pokemons --"
+
+		for _, p := range tr.PartyPokemon {
+			tokens += fmt.Sprintf("%v", p)
+		}
+	}
+
+	return tokens + "========"
+}
+
+func RipTrainerDataPlat() []PlatTrainer {
+	ret := make([]PlatTrainer, 0)
+
+	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
+	f, err := os.ReadFile(path)
+
+	if err != nil {
+		panic(err)
+	}
+
+	trainerData := narc.NewNarcFile(f, 0x0371E000)
+	trainerPokemon := narc.NewNarcFile(f, 0x03724600)
+
+	trainerId := 0
+	numPokemonsRead := 0
+
+	for _, file := range trainerData.FrameFATB.Data.Entries {
+		// read offsets in FIMG buffer
+		trainerBuf := trainerData.FrameFIMG.Data.Data[file.Start : file.End]
+		// fmt.Println(trainerBuf)
+		w := walker.NewWalker(trainerBuf)
+
+		trainer := PlatTrainer{
+			Flags: w.U8(),
+			Class: w.U8(),
+			BattleType: w.U8(),
+			NumPokemon: w.U8(),
+			Item1: w.U16(),
+			Item2: w.U16(),
+			Item3: w.U16(),
+			Item4: w.U16(),
+			AiType: w.U32(),
+			BattleType2: w.U32(),
+			PartyPokemon: make([]TrainerPokemon, 0),
+		}
+
+		partyEntryBytes := trainerPokemon.FrameFIMG.Data.Data
+
+		for range trainer.NumPokemon {
+			if numPokemonsRead == len(trainerPokemon.FrameFATB.Data.Entries) {
+				break
+			}
+			pkmnFile := trainerPokemon.FrameFATB.Data.Entry(numPokemonsRead)
+			pokemonBuf := partyEntryBytes[pkmnFile.Start : pkmnFile.End]
+			fmt.Printf("%03d|  % x\n", numPokemonsRead, pokemonBuf)
+			pw := walker.NewWalker(pokemonBuf)
+
+			pkmn := TrainerPokemon{
+				Difficulty: pw.U16(),
+				Level: pw.U16(),
+				Species: pw.U16(),
+				Seal: pw.U16(),
+				MoveIds: make([]*uint16, 0),
+			}
+
+			switch (trainer.Flags) {
+			case 0: {
+				// fmt.Println("type 0, not adding any more flags")
+				break
+			}
+			case 1: {
+				// fmt.Println("Case 1 - custom moveset")
+				for range 4 {
+					moveId := pw.U16()
+					if (moveId != 0) {
+						pkmn.MoveIds = append(pkmn.MoveIds, &moveId)
+					}
+				}
+				break
+			}
+			case 2: {
+				// fmt.Println("Case 2 - item")
+				itemId := pw.U16()
+				pkmn.ItemId = &itemId
+				break
+			}
+			case 3: {
+				// fmt.Println("Case 3 - item + custom moveset")
+				itemId := pw.U16()
+				for range 4 {
+					moveId := pw.U16()
+					if (moveId != 0) {
+						pkmn.MoveIds = append(pkmn.MoveIds, &moveId)
+					}
+				}
+				pkmn.ItemId = &itemId
+				break
+			}
+			default: {
+				fmt.Println("uh oh....")
+			}
+			}
+
+			// ivs := uint32(pkmn.Difficulty) * 31 / 255
+			numPokemonsRead += 1
+			trainer.PartyPokemon = append(trainer.PartyPokemon, pkmn)
+		}
+
+		trainerId += 1
+		ret = append(ret, trainer)
+	}
+
+	return ret
 }
