@@ -173,6 +173,10 @@ func (pt *PlatSavefile) validatePokemon(p *models.Pokemon) error {
 	}
 
 	// EV validation - nothign to do
+	if err := p.EV.AssertBound(255); err != nil {
+		return newError(err.Error()) // theoretically should never hit this due to static uint8 bound checks
+	}
+
 	// EXP validation
 	growthType := pt.pokemonMetadata[p.PokedexId].GrowthType
 	// contains total EXP required to reach each level (has an entry for lvl 0 for some reason)
