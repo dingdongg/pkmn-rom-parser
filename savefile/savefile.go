@@ -74,7 +74,12 @@ type HgssSavefile struct {
 
 type BwSavefile struct {
 	rawBytes     []byte
+	latestSave []byte
 	partyPokemon []*models.Pokemon
+	moveNames []string
+	rawParty []byte
+	expTable []ripper.ExperienceTable
+	pokemonMetadata []ripper.PokemonMetadata
 }
 
 type B2W2Savefile struct {

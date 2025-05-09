@@ -14,9 +14,15 @@ import (
 )
 
 func NewBwSavefile(bytes []byte) *BwSavefile {
+	// latest save identification
 	return &BwSavefile{
 		rawBytes:     bytes,
+		latestSave: bytes[0x0 : 0x23F9C],
 		partyPokemon: make([]*models.Pokemon, 0),
+		moveNames: ripper.RipMoveNamesGen5(),
+		rawParty: make([]byte, 0),
+		// TODO: implement ripper for gen 5 exp table
+		// TODO: implement ripper for gen 5 pokemon metadata
 	}
 }
 
@@ -58,12 +64,11 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 	}
 
 	moves := make([]models.Move, 0)
-	moveNames := ripper.RipMoveNamesGen5()
 	for i := range 0x4 {
 		id := utils.U16(b, i*0x2)
 		move := models.Move{
 			Id:   id,
-			Name: moveNames[id],
+			Name: bw.moveNames[id],
 		}
 		moves = append(moves, move)
 	}
