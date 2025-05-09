@@ -63,7 +63,7 @@ func (b bytes) checkBlackWhite() error {
 	checksumAddr := 0x23F9A
 
 	actual := crypt.CRC16_CCITT(b.buf[cbOffset : cbOffset+cbSize])
-	expected := binary.LittleEndian.Uint16(b.buf[checksumAddr : checksumAddr+0x2])
+	expected := utils.U16(b.buf, checksumAddr)
 
 	if actual == expected {
 		return nil
@@ -72,7 +72,7 @@ func (b bytes) checkBlackWhite() error {
 	cbOffset += 0x24000
 	checksumAddr += 0x24000
 	actual = crypt.CRC16_CCITT(b.buf[cbOffset : cbOffset+cbSize])
-	expected = binary.LittleEndian.Uint16(b.buf[checksumAddr : checksumAddr+0x2])
+	expected = utils.U16(b.buf, checksumAddr)
 
 	if actual == expected {
 		return nil
