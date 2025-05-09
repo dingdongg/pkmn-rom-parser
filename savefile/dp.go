@@ -89,10 +89,9 @@ func (dp *DpSavefile) parsePokemon(index int) models.Pokemon {
 		moves = append(moves, move)
 	}
 
-	/*
-		missing:
-		- base stats
-	*/
+	pokedexId := utils.U16(a, 0x0)
+	metadata := dp.pokemonMetadata[pokedexId]
+
 	return models.Pokemon{
 		Name:      name,
 		PokedexId: utils.U16(a, 0x0),
@@ -128,6 +127,7 @@ func (dp *DpSavefile) parsePokemon(index int) models.Pokemon {
 			Speed:      utils.U16(battleStats, 0xE),
 		},
 		Form: form,
+		Base: metadata.Base,
 	}
 }
 

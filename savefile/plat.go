@@ -95,13 +95,12 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 		moves = append(moves, move)
 	}
 
-	/*
-		missing:
-		- base stats
-	*/
+	pokedexId := utils.U16(a, 0x0)
+	metadata := pt.pokemonMetadata[pokedexId]
+
 	return models.Pokemon{
 		Name:      name,
-		PokedexId: utils.U16(a, 0x0),
+		PokedexId: pokedexId,
 		Exp:       utils.U32(a, 0x8),
 		Level:     utils.U8(battleStats, 0x4),
 		Nature:    enums.Nature(utils.U32(raw, 0) % 25),
@@ -134,6 +133,7 @@ func (pt *PlatSavefile) parsePokemon(index int) models.Pokemon {
 			Speed:      utils.U16(battleStats, 0xE),
 		},
 		Form: form,
+		Base: metadata.Base,
 	}
 }
 
