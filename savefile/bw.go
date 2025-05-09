@@ -1,7 +1,6 @@
 package savefile
 
 import (
-	"encoding/binary"
 	"unicode/utf16"
 
 	"github.com/dingdongg/pkmn-rom-parser/v7/crypt"
@@ -14,10 +13,8 @@ import (
 )
 
 func NewBwSavefile(bytes []byte) *BwSavefile {
-	// latest save identification
 	return &BwSavefile{
 		rawBytes:     bytes,
-		latestSave: bytes[0x0 : 0x23F9C],
 		partyPokemon: make([]*models.Pokemon, 0),
 		moveNames: ripper.RipMoveNamesGen5(),
 		rawParty: make([]byte, 0),
@@ -117,7 +114,7 @@ func (bw *BwSavefile) parsePokemon(index int) models.Pokemon {
 }
 
 func (bw *BwSavefile) PartyPokemon() []*models.Pokemon {
-	partySize := int(binary.LittleEndian.Uint32(bw.rawBytes[0x18E04:0x18E08]))
+	partySize := int(utils.U32(bw.rawBytes, 0x18E04))
 	for i := range partySize {
 		pkmn := bw.parsePokemon(i)
 		bw.partyPokemon = append(bw.partyPokemon, &pkmn)

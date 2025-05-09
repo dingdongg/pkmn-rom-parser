@@ -74,7 +74,12 @@ type HgssSavefile struct {
 
 type BwSavefile struct {
 	rawBytes     []byte
-	latestSave []byte
+	// in B/W, both the primary and backup saves
+	// hold the same logical data;
+	// I think the backup is more literal in the sense
+	// that it serves to work around memory corruptions
+	// without reverting back to a previous save 
+	// latestSave []byte
 	partyPokemon []*models.Pokemon
 	moveNames []string
 	rawParty []byte
