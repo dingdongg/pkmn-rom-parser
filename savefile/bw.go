@@ -18,7 +18,7 @@ func NewBwSavefile(bytes []byte) *BwSavefile {
 		partyPokemon: make([]*models.Pokemon, 0),
 		moveNames: ripper.RipMoveNamesGen5(),
 		rawParty: make([]byte, 0),
-		// TODO: implement ripper for gen 5 exp table
+		expTable: ripper.RipExpTableGen5(),
 		// TODO: implement ripper for gen 5 pokemon metadata
 	}
 }

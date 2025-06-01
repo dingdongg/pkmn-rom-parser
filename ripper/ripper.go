@@ -61,7 +61,7 @@ func (pm PokemonMetadata) String() string {
 	ret += pm.EVYield.Print("EV Yield")
 	return ret
 }
-
+// TODO: create another Metadata struct for gen 5 pokemon; struct formats are different 
 func NewPokemon(buffer []byte, offset int) PokemonMetadata {
 	obj := buffer[offset : offset+44]
 
@@ -136,6 +136,26 @@ func buf2D[T any](x uint16, y uint16) [][]T {
 	}
 
 	return output
+}
+
+func RipExpTableGen5() []ExperienceTable {
+	path := path_resolver.GetRoot() + "/roms/white.nds"
+	f, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	narcFile := narc.NewNarcFile(f, 0x06958C00)
+	entries := narcFile.FrameFATB.Data.Entries
+	ret := make([]ExperienceTable, 0)
+	data := narcFile.FrameFIMG.Data.Data
+
+	for _, e := range entries {
+		table := newGrowthTableGen4(data[e.Start:e.End]) // same format as gen 4 games
+		ret = append(ret, table)
+	}
+
+	return ret
 }
 
 func RipMoveNamesGen5() []string {
