@@ -26,11 +26,11 @@ func NewHgssSavefile(bytes []byte) *HgssSavefile {
 
 	return &HgssSavefile{
 		rawBytes:     bytes,
-		latestSave: latestBlock,
-		partyPokemon: make([]*models.Pokemon, 0),moveNames: ripper.RipMoveNames(),
-		rawParty: make([]byte, 0),
-		expTable: ripper.RipExpTableGen4(),
-		pokemonMetadata: ripper.RipPokemonData(),
+		latestSave:   latestBlock,
+		partyPokemon: make([]*models.Pokemon, 0), moveNames: ripper.RipMoveNames(),
+		rawParty:        make([]byte, 0),
+		expTable:        ripper.RipExpTableGen4(),
+		pokemonMetadata: ripper.RipPokemonDataGen4(),
 	}
 }
 

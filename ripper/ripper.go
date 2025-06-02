@@ -41,6 +41,35 @@ type PokemonMetadata struct {
 	Padding2        []byte // length 3
 }
 
+type PokemonMetadataGen5 struct {
+	Base            models.Stat[uint8]
+	Type1           uint8
+	Type2           uint8
+	CatchRate       uint8
+	Stage           uint8
+	EVYield         models.Stat[uint8]
+	Item1           uint16
+	Item2           uint16
+	Item3           uint16
+	GenderThreshold uint8
+	EggCycles       uint8
+	BaseFriendship  uint8
+	GrowthType      uint8
+	EggGroup1       uint8
+	EggGroup2       uint8
+	Ability1        uint8
+	Ability2        uint8
+	Ability3        uint8
+	Flee            uint8 // SafariZoneRate?
+	FormId          uint16
+	Form            uint16
+	NumForms        uint8
+	Color           uint8
+	BaseExp         uint16
+	Height          uint16
+	Weight          uint16
+}
+
 type ExperienceTable = []uint32
 
 func (pm PokemonMetadata) String() string {
@@ -61,8 +90,8 @@ func (pm PokemonMetadata) String() string {
 	ret += pm.EVYield.Print("EV Yield")
 	return ret
 }
-// TODO: create another Metadata struct for gen 5 pokemon; struct formats are different 
-func NewPokemon(buffer []byte, offset int) PokemonMetadata {
+
+func NewPokemonGen4(buffer []byte, offset int) PokemonMetadata {
 	obj := buffer[offset : offset+44]
 
 	rawEV := utils.U16(obj, 10)
@@ -109,7 +138,63 @@ func NewPokemon(buffer []byte, offset int) PokemonMetadata {
 	}
 }
 
-func RipPokemonData() []PokemonMetadata {
+func NewPokemonGen5(data []byte) PokemonMetadataGen5 {
+	w := walker.NewWalker(data)
+	w.Seek(6) // skip base stats
+
+	pokemon := PokemonMetadataGen5{
+		Base: models.Stat[uint8]{
+			Hp:         utils.U8(data, 0),
+			Attack:     utils.U8(data, 1),
+			Defense:    utils.U8(data, 2),
+			SpeAttack:  utils.U8(data, 4),
+			SpeDefense: utils.U8(data, 5),
+			Speed:      utils.U8(data, 3),
+		},
+		Type1:     w.U8(),
+		Type2:     w.U8(),
+		CatchRate: w.U8(),
+		Stage:     w.U8(),
+	}
+
+	rawEV := w.U16()
+	getEV := func(index int) uint8 {
+		return uint8((rawEV >> (index * 2)) & 0b11)
+	}
+	pokemon.EVYield = models.Stat[uint8]{
+		Hp:         getEV(0),
+		Attack:     getEV(1),
+		Defense:    getEV(2),
+		SpeAttack:  getEV(4),
+		SpeDefense: getEV(5),
+		Speed:      getEV(3),
+	}
+
+	pokemon.Item1 = w.U16()
+	pokemon.Item2 = w.U16()
+	pokemon.Item3 = w.U16()
+	pokemon.GenderThreshold = w.U8()
+	pokemon.EggCycles = w.U8()
+	pokemon.BaseFriendship = w.U8()
+	pokemon.GrowthType = w.U8()
+	pokemon.EggGroup1 = w.U8()
+	pokemon.EggGroup2 = w.U8()
+	pokemon.Ability1 = w.U8()
+	pokemon.Ability2 = w.U8()
+	pokemon.Ability3 = w.U8()
+	pokemon.Flee = w.U8()
+	pokemon.FormId = w.U16()
+	pokemon.Form = w.U16()
+	pokemon.NumForms = w.U8()
+	pokemon.Color = w.U8()
+	pokemon.BaseExp = w.U16()
+	pokemon.Height = w.U16()
+	pokemon.Weight = w.U16()
+
+	return pokemon
+}
+
+func RipPokemonDataGen4() []PokemonMetadata {
 	path := path_resolver.GetRoot() + "/roms/pkmn-pt.nds"
 	f, err := os.ReadFile(path)
 
@@ -123,7 +208,27 @@ func RipPokemonData() []PokemonMetadata {
 
 	// static range is not good, determine at runtime using FATB frame...
 	for i := range 508 {
-		ret = append(ret, NewPokemon(buffer, i*44))
+		ret = append(ret, NewPokemonGen4(buffer, i*44))
+	}
+
+	return ret
+}
+
+func RipPokemonDataGen5() []PokemonMetadataGen5 {
+	path := path_resolver.GetRoot() + "/roms/white.nds"
+	f, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	narcFile := narc.NewNarcFile(f, 0x0694D400)
+	data := narcFile.FrameFIMG.Data.Data
+	ret := make([]PokemonMetadataGen5, 0)
+	entries := narcFile.FrameFATB.Data.Entries
+
+	for _, e := range entries {
+		pokemon := NewPokemonGen5(data[e.Start:e.End])
+		ret = append(ret, pokemon)
 	}
 
 	return ret
@@ -437,11 +542,11 @@ func RipPokemonNamesGen4() []string {
 
 type TrainerPokemon struct {
 	Difficulty uint16
-	Level uint16 // technicall u8 + u8 of padding, but same thing since this is little-endian
-	Species uint16
-	Seal uint16
-	ItemId *uint16		// optional
-	MoveIds []*uint16	// optional
+	Level      uint16 // technicall u8 + u8 of padding, but same thing since this is little-endian
+	Species    uint16
+	Seal       uint16
+	ItemId     *uint16   // optional
+	MoveIds    []*uint16 // optional
 }
 
 var pokemonNames []string = RipPokemonNamesGen4()
@@ -452,7 +557,7 @@ func (pkmn TrainerPokemon) String() string {
 	tokens = append(tokens, fmt.Sprintf("  difficulty: %d", pkmn.Difficulty))
 	tokens = append(tokens, fmt.Sprintf("  level:      %d", pkmn.Level))
 
-	form, pokedexId := (pkmn.Species & 0x0C00) >> 10, pkmn.Species & 0x3FF
+	form, pokedexId := (pkmn.Species&0x0C00)>>10, pkmn.Species&0x3FF
 	pokemonName := pokemonNames[pokedexId]
 	tokens = append(tokens, "  Species:")
 	tokens = append(tokens, fmt.Sprintf("    form:       %d", form))
@@ -472,16 +577,16 @@ func (pkmn TrainerPokemon) String() string {
 }
 
 type PlatTrainer struct {
-	Flags uint8
-	Class uint8
-	BattleType uint8
-	NumPokemon uint8
-	Item1 uint16
-	Item2 uint16
-	Item3 uint16
-	Item4 uint16
-	AiType uint32
-	BattleType2 uint32
+	Flags        uint8
+	Class        uint8
+	BattleType   uint8
+	NumPokemon   uint8
+	Item1        uint16
+	Item2        uint16
+	Item3        uint16
+	Item4        uint16
+	AiType       uint32
+	BattleType2  uint32
 	PartyPokemon []TrainerPokemon
 }
 
@@ -491,8 +596,8 @@ func (tr PlatTrainer) String() string {
 	tokens += fmt.Sprintf("trainer class: %d\n", tr.Class)
 	tokens += fmt.Sprintf("battle type 1: %d\n", tr.BattleType)
 	tokens += fmt.Sprintf("# pokemons:    %d\n", tr.NumPokemon)
-	
-	itemIds := [4]uint16{ tr.Item1, tr.Item2, tr.Item3, tr.Item4 }
+
+	itemIds := [4]uint16{tr.Item1, tr.Item2, tr.Item3, tr.Item4}
 	for i, itemId := range itemIds {
 		if itemId != 0 {
 			tokens += fmt.Sprintf("trainer item ID #%d: %d\n", i, itemId)
@@ -502,7 +607,7 @@ func (tr PlatTrainer) String() string {
 	tokens += fmt.Sprintf("AI Model:      %d\n", tr.AiType)
 	tokens += fmt.Sprintf("battle type 2: %d\n", tr.BattleType2)
 
-	if (len(tr.PartyPokemon) > 0) {
+	if len(tr.PartyPokemon) > 0 {
 		tokens += "-- Pokemons --"
 
 		for _, p := range tr.PartyPokemon {
@@ -531,21 +636,21 @@ func RipTrainerDataPlat() []PlatTrainer {
 
 	for _, file := range trainerData.FrameFATB.Data.Entries {
 		// read offsets in FIMG buffer
-		trainerBuf := trainerData.FrameFIMG.Data.Data[file.Start : file.End]
+		trainerBuf := trainerData.FrameFIMG.Data.Data[file.Start:file.End]
 		// fmt.Println(trainerBuf)
 		w := walker.NewWalker(trainerBuf)
 
 		trainer := PlatTrainer{
-			Flags: w.U8(),
-			Class: w.U8(),
-			BattleType: w.U8(),
-			NumPokemon: w.U8(),
-			Item1: w.U16(),
-			Item2: w.U16(),
-			Item3: w.U16(),
-			Item4: w.U16(),
-			AiType: w.U32(),
-			BattleType2: w.U32(),
+			Flags:        w.U8(),
+			Class:        w.U8(),
+			BattleType:   w.U8(),
+			NumPokemon:   w.U8(),
+			Item1:        w.U16(),
+			Item2:        w.U16(),
+			Item3:        w.U16(),
+			Item4:        w.U16(),
+			AiType:       w.U32(),
+			BattleType2:  w.U32(),
 			PartyPokemon: make([]TrainerPokemon, 0),
 		}
 
@@ -556,54 +661,59 @@ func RipTrainerDataPlat() []PlatTrainer {
 				break
 			}
 			pkmnFile := trainerPokemon.FrameFATB.Data.Entry(numPokemonsRead)
-			pokemonBuf := partyEntryBytes[pkmnFile.Start : pkmnFile.End]
+			pokemonBuf := partyEntryBytes[pkmnFile.Start:pkmnFile.End]
 			fmt.Printf("%03d|  % x\n", numPokemonsRead, pokemonBuf)
 			pw := walker.NewWalker(pokemonBuf)
 
 			pkmn := TrainerPokemon{
 				Difficulty: pw.U16(),
-				Level: pw.U16(),
-				Species: pw.U16(),
-				Seal: pw.U16(),
-				MoveIds: make([]*uint16, 0),
+				Level:      pw.U16(),
+				Species:    pw.U16(),
+				Seal:       pw.U16(),
+				MoveIds:    make([]*uint16, 0),
 			}
 
-			switch (trainer.Flags) {
-			case 0: {
-				// fmt.Println("type 0, not adding any more flags")
-				break
-			}
-			case 1: {
-				// fmt.Println("Case 1 - custom moveset")
-				for range 4 {
-					moveId := pw.U16()
-					if (moveId != 0) {
-						pkmn.MoveIds = append(pkmn.MoveIds, &moveId)
-					}
+			switch trainer.Flags {
+			case 0:
+				{
+					// fmt.Println("type 0, not adding any more flags")
+					break
 				}
-				break
-			}
-			case 2: {
-				// fmt.Println("Case 2 - item")
-				itemId := pw.U16()
-				pkmn.ItemId = &itemId
-				break
-			}
-			case 3: {
-				// fmt.Println("Case 3 - item + custom moveset")
-				itemId := pw.U16()
-				for range 4 {
-					moveId := pw.U16()
-					if (moveId != 0) {
-						pkmn.MoveIds = append(pkmn.MoveIds, &moveId)
+			case 1:
+				{
+					// fmt.Println("Case 1 - custom moveset")
+					for range 4 {
+						moveId := pw.U16()
+						if moveId != 0 {
+							pkmn.MoveIds = append(pkmn.MoveIds, &moveId)
+						}
 					}
+					break
 				}
-				pkmn.ItemId = &itemId
-				break
-			}
-			default: {
-				fmt.Println("uh oh....")
-			}
+			case 2:
+				{
+					// fmt.Println("Case 2 - item")
+					itemId := pw.U16()
+					pkmn.ItemId = &itemId
+					break
+				}
+			case 3:
+				{
+					// fmt.Println("Case 3 - item + custom moveset")
+					itemId := pw.U16()
+					for range 4 {
+						moveId := pw.U16()
+						if moveId != 0 {
+							pkmn.MoveIds = append(pkmn.MoveIds, &moveId)
+						}
+					}
+					pkmn.ItemId = &itemId
+					break
+				}
+			default:
+				{
+					fmt.Println("uh oh....")
+				}
 			}
 
 			// ivs := uint32(pkmn.Difficulty) * 31 / 255

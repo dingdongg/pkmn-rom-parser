@@ -25,13 +25,13 @@ func NewDpSavefile(bytes []byte) *DpSavefile {
 	}
 
 	return &DpSavefile{
-		rawBytes:     bytes,
-		latestSave: latestBlock,
-		partyPokemon: make([]*models.Pokemon, 0),
-		moveNames: ripper.RipMoveNames(),
-		rawParty: make([]byte, 0),
-		expTable: ripper.RipExpTableGen4(),
-		pokemonMetadata: ripper.RipPokemonData(),
+		rawBytes:        bytes,
+		latestSave:      latestBlock,
+		partyPokemon:    make([]*models.Pokemon, 0),
+		moveNames:       ripper.RipMoveNames(),
+		rawParty:        make([]byte, 0),
+		expTable:        ripper.RipExpTableGen4(),
+		pokemonMetadata: ripper.RipPokemonDataGen4(),
 	}
 }
 

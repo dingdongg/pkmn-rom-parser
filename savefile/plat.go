@@ -37,7 +37,7 @@ func NewPlatSavefile(bytes []byte) *PlatSavefile {
 		moveNames:       ripper.RipMoveNames(),
 		rawParty:        make([]byte, 0), // decrypted
 		expTable:        ripper.RipExpTableGen4(),
-		pokemonMetadata: ripper.RipPokemonData(),
+		pokemonMetadata: ripper.RipPokemonDataGen4(),
 	}
 }
 
