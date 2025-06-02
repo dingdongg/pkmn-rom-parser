@@ -84,7 +84,8 @@ type BwSavefile struct {
 	moveNames []string
 	rawParty []byte
 	expTable []ripper.ExperienceTable
-	pokemonMetadata []ripper.PokemonMetadata
+	pokemonMetadata []ripper.PokemonMetadataGen5
+	itemTable []string
 }
 
 type B2W2Savefile struct {
