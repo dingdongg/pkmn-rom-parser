@@ -206,8 +206,8 @@ func RipPokemonDataGen4() []PokemonMetadata {
 	buffer := narcFile.FrameFIMG.Data.Data
 	ret := make([]PokemonMetadata, 0)
 
-	// static range is not good, determine at runtime using FATB frame...
-	for i := range 508 {
+	numEntries := len(narcFile.FrameFATB.Data.Entries)
+	for i := range numEntries {
 		ret = append(ret, NewPokemonGen4(buffer, i*44))
 	}
 
