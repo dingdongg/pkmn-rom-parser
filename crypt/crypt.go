@@ -81,7 +81,7 @@ func DecryptPokemon(ciphertext []byte) []byte {
 	}
 
 	if plaintextSum != checksum {
-		log.Fatalf("Checksum invalid. expected 0x%x, got 0x%x\n", checksum, plaintextSum)
+		log.Fatalf("Checksum invalid. expected 0x%X, got 0x%X\n", checksum, plaintextSum)
 	}
 
 	return append(buffer, DecryptBattleStats(ciphertext[0x88:], personality)...)

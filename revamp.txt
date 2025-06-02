@@ -1,0 +1,27 @@
+250328 - notes
+---
+Users want to:
+- pass in a series of bytes to read/update it as a "Savefile object"
+- when initializing savefile object, should validate and identify type of game
+
+Validation
+- for gen 4 games, 
+    - look for magic numbers in footer
+    - verify the correctness of checksum in footer
+- for gen 5 games,
+    - verify correctness of checksums at both original + mirror locations
+    - verify correctness of checksum block at the very end
+- either throw error, or return a savefile interface-compliant object
+
+Savefile interface
+- get party pokemons
+- update party pokemon(s)
+- commit unsaved changes to file
+
+concrete implementations
+- access to raw bytes for writebacks
+- create "pokemon objects" in heap? stack as member vars?
+
+
+Getting party pokemon
+- decrypt party pokemon stats

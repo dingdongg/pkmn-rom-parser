@@ -1,11 +1,20 @@
+# savefiles
 savefiles/*
 pkmn-rom-parser
+**/*.sav
 
+# macOS stuff
 .DS_Store
 
+# scripts for development
 dev/*
 
-main 
+# binaries
+main*
 results*
 
+# ? tf is this lol
 sav/*_test.go
+
+# ROM files
+roms/*

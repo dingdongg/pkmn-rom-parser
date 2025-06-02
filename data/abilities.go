@@ -173,7 +173,7 @@ var abilityTable [165]string = [165]string{
 
 func GetAbility(index uint) (string, error) {
 	if index >= uint(len(abilityTable)) {
-		return "", errors.New("invalid index")
+		return "", errors.New("abilities.go: invalid index")
 	}
 
 	return abilityTable[index], nil

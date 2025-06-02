@@ -550,6 +550,8 @@ var itemsTable [538]itemInfo = [538]itemInfo{
 	{"Enigma Stone", "HGSS"},
 }
 
+// TODO: add support for gen 5 items
+
 type mapValue struct {
 	Index uint
 	Exclusivity string
@@ -557,7 +559,7 @@ type mapValue struct {
 
 func GetItem(index uint16) (itemInfo, error) {
 	if index >= uint16(len(itemsTable)) {
-		return itemInfo{}, fmt.Errorf("invalid index: %d", index)
+		return itemInfo{}, fmt.Errorf("items_gen4.go: invalid index: %d", index)
 	}
 
 	return itemsTable[index], nil

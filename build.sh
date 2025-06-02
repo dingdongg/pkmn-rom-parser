@@ -1,0 +1,1 @@
+go build dev/analyze/main.go

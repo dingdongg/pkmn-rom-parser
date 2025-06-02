@@ -59,7 +59,7 @@ const (
 )
 
 // TODO: update function to use ISave methods instead
-func GetPartyPokemon(game sav.ISave) []Pokemon {
+func GetPartyPokemon(game sav.Savefile) []Pokemon {
 	size := game.PartySize()
 	ciphertext := game.PartySection()
 	var party []Pokemon

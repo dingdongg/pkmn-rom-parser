@@ -15,7 +15,7 @@ const HGSS_BB_END uint = HGSS_BB_START + 0x12310 // non-inclusive
 const MAGIC_TIMESTAMP_JP_INTL = 0x20060623
 const MAGIC_TIMESTAMP_KR = 0x20070903
 
-func identifyGameVersion(savefile []byte) (ISave, error) {
+func identifyGameVersion(savefile []byte) (Savefile, error) {
 	// gen 4 games start writing to the 0x40000-offset address space,
 	// check there for the existence of a valid footer
 	chunkTwoOffset := uint(0x40000)

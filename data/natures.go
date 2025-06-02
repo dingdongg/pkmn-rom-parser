@@ -32,7 +32,7 @@ var natureTable [25]string = [25]string{
 
 func GetNature(index uint) (string, error) {
 	if index >= uint(len(natureTable)) {
-		return "", errors.New("invalid index")
+		return "", errors.New("natures.go: invalid index")
 	}
 
 	return natureTable[index], nil
