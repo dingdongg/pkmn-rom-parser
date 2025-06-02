@@ -354,6 +354,96 @@ func RipMoveNamesGen5() []string {
 	return decryptFile(buf)
 }
 
+// TODO: rip from a B2W2 file instead, since this one is 
+// just a subset of the B2W2 item names
+func RipItemNamesGen5() []string {
+	path := path_resolver.GetRoot() + "/roms/white.nds"
+	f, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	narcFile := narc.NewNarcFile(f, 0x03471C00)
+	itemNameFileRange := narcFile.FrameFATB.Data.Entry(54)
+
+	buf := narcFile.FrameFIMG.Data.Data[itemNameFileRange.Start:itemNameFileRange.End]
+
+	decryptFile := func(buffer []byte) []string {
+		w := walker.NewWalker(buffer)
+		numBlocks, numEntries := w.U16(), w.U16()
+		// filesize, zero := w.U32(), w.U32()
+		w.U32() // filesize, unused
+		w.U32() // zero, unused
+
+		blockOffsets := make([]uint32, numBlocks)
+		tableOffsets := buf2D[uint32](numBlocks, numEntries)
+		charCounts := buf2D[uint16](numBlocks, numEntries)
+		textFlags := buf2D[uint16](numBlocks, numEntries)
+
+		texts := make([][]string, numBlocks)
+		for i := range texts {
+			texts[i] = make([]string, numEntries) // technically this should be of length `numEntries`
+		}
+
+		for i := uint16(0); i < numBlocks; i++ {
+			blockOffsets[i] = w.U32()
+		}
+
+		for i := uint16(0); i < numBlocks; i++ {
+			w.Seek(int(blockOffsets[i]))
+
+			// blockSize := w.U32()
+			w.U32() // blockSize, unused
+			for j := uint16(0); j < numEntries; j++ {
+				tableOffsets[i][j] = w.U32()
+				charCounts[i][j] = w.U16()
+				textFlags[i][j] = w.U16()
+			}
+
+			for j := uint16(0); j < numEntries; j++ {
+				encChars := dsa.NewSliceStack[uint16]()
+				decChars := dsa.NewSliceStack[uint16]()
+				// string := texts[i][j]
+
+				w.Seek(int(blockOffsets[i]) + int(tableOffsets[i][j]))
+				for k := uint16(0); k < charCounts[i][j]; k++ {
+					encChars.Push(w.U16())
+				}
+
+				key := encChars.Peek()
+				for !encChars.Empty() {
+					val := ^(encChars.Pop() ^ key) // have to negate the resulting value for some reason
+					decChars.Push(val)
+					key = ((key >> 3) | (key << 13)) & 0xFFFF
+				}
+
+				charBuf := make([]uint16, 1)
+				for !decChars.Empty() {
+					charBuf[0] = decChars.Pop()
+					char := charBuf[0]
+					if char == 0xFFFF {
+						break // continue, like gen 4?
+					} else if char == 0xFFFE {
+						texts[i][j] += "\n"
+					} else if char == 0xF000 {
+						fmt.Println("NEED TO APPEND SPECIAL CHAR")
+						texts[i][j] += "😎"
+					} else {
+						res := string(utf16.Decode(charBuf))
+						texts[i][j] += res
+					}
+				}
+			}
+		}
+
+		// fmt.Println("output: ", texts)
+		// return make([]string, 0) // stub
+		return texts[0]
+	}
+
+	return decryptFile(buf)
+}
+
 func newGrowthTableGen4(file []byte) ExperienceTable {
 	// 101 entries of uint32s
 	table := make(ExperienceTable, 0)
